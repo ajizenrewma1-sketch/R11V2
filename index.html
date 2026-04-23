@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>M-Flow Multi-Section Report System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #f1f5f9;
+            color: #334155;
+        }
+
+        .header-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .highlight-mflow {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 2rem;
+            font-weight: 800;
+        }
+
+        /* --- Premium Modal System --- */
+        #confirmModal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(8px);
+            z-index: 3000;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        #confirmModal.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-card {
+            background: white;
+            border-radius: 1.5rem;
+            width: 90%;
+            max-width: 420px;
+            padding: 2rem;
+            transform: scale(0.9) translateY(20px);
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            text-align: center;
+        }
+
+        #confirmModal.active .modal-card {
+            transform: scale(1) translateY(0);
+        }
+
+        .icon-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            position: relative;
+        }
+
+        .pulse-ring {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            animation: pulse-ring 1.5s infinite;
+        }
+
+        @keyframes pulse-ring {
+            0% { transform: scale(0.8); opacity: 0.5; }
+            100% { transform: scale(1.6); opacity: 0; }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-6px); }
+            40% { transform: translateX(6px); }
+            60% { transform: translateX(-3px); }
+            80% { transform: translateX(3px); }
+        }
+
+        .shake-effect { animation: shake 0.5s ease-in-out; }
+
+        /* --- End Modal Styles --- */
+
+        .table-wrapper {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            margin-bottom: 2rem;
+            overflow-x: auto;
+            position: relative;
+        }
+
+        .action-btn-container {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 20;
+            display: flex;
+            gap: 8px;
+        }
+
+        .clear-table-btn {
+            background: #ef4444;
+            color: white;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+        .clear-table-btn:hover { opacity: 1; }
+
+        .copy-table-btn {
+            background: #4f46e5;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .copy-table-btn:hover { 
+            background: #4338ca;
+            transform: translateY(-1px);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10px;
+            table-layout: fixed;
+            min-width: 1200px;
+        }
+
+        th, td {
+            border: 1px solid #cbd5e1;
+            text-align: center;
+            vertical-align: middle;
+            padding: 4px 2px;
+            min-height: 28px;
+        }
+
+        th {
+            background-color: #f8fafc;
+            font-weight: 600;
+            line-height: 1.2;
+        }
+
+        .bg-section-header {
+            background-color: #e2e8f0;
+            font-weight: 700;
+            font-size: 14px;
+            height: 44px;
+            text-align: center !important;
+        }
+
+        .bg-sub-header { background-color: #f1f5f9; }
+        .bg-total { background-color: #f8fafc; font-weight: bold; }
+
+        input {
+            width: 100%;
+            border: none;
+            outline: none;
+            text-align: center;
+            background: transparent;
+            padding: 4px 0;
+            transition: all 0.2s;
+        }
+
+        .sticky-col {
+            position: sticky;
+            left: 0;
+            background: white;
+            z-index: 10;
+            width: 130px !important;
+            text-align: left !important;
+            padding-left: 8px !important;
+            border-right: 2px solid #cbd5e1;
+        }
+
+        .display-val { display: none; font-weight: 600; color: #1e293b; }
+        .summary-mode .display-val { display: inline-block; }
+        .summary-mode input { display: none !important; }
+
+        .summary-mode .validation-note, 
+        .summary-mode .clear-table-btn { display: none !important; }
+        .audit-mode .copy-table-btn { display: none !important; }
+
+        .audit-mode .valid-success-bg { background-color: #dcfce7 !important; }
+        .audit-mode .valid-success-text { color: #15803d !important; font-weight: 700 !important; }
+        
+        @keyframes pulse-red-alert {
+            0% { background-color: #fee2e2; }
+            50% { background-color: #fca5a5; }
+            100% { background-color: #fee2e2; }
+        }
+        .audit-mode .valid-error-bg {
+            animation: pulse-red-alert 0.8s infinite ease-in-out !important;
+            border: 2px solid #ef4444 !important;
+        }
+        .audit-mode .valid-error-text { color: #b91c1c !important; font-weight: 800 !important; }
+
+        .validation-note {
+            font-size: 10px;
+            display: block;
+            margin-top: 2px;
+            line-height: 1.1;
+        }
+
+        .tab-btn {
+            padding: 0.75rem 2rem;
+            font-weight: 700;
+            border-bottom: 4px solid transparent;
+            transition: all 0.3s;
+            color: #64748b;
+        }
+        .tab-btn.active {
+            color: #2563eb;
+            border-bottom-color: #2563eb;
+            background-color: #eff6ff;
+        }
+
+        .batch-counter {
+            background: #1e293b;
+            color: #38bdf8;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 800;
+            border: 1px solid #334155;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 24px;
+            background: #1e293b;
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);
+            display: none;
+            z-index: 5000;
+            animation: slideIn 0.3s ease-out;
+            font-weight: bold;
+        }
+
+        #alertModal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @media print {
+            .no-print { display: none; }
+            body { background: white; padding: 0; }
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 audit-mode" id="mainBody">
+
+    <!-- Premium Confirm Modal -->
+    <div id="confirmModal">
+        <div class="modal-card" id="modalCard">
+            <div id="modalIconContainer" class="icon-circle">
+                <div id="modalPulse" class="pulse-ring"></div>
+                <div id="modalIconInner"></div>
+            </div>
+            <h3 id="modalTitle" class="text-2xl font-bold text-slate-800 mb-2"></h3>
+            <p id="modalMessage" class="text-slate-500 mb-8 leading-relaxed"></p>
+            <div class="flex gap-3">
+                <button onclick="closeConfirmModal()" class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition">ยกเลิก</button>
+                <button id="modalConfirmAction" class="flex-1 py-3 text-white rounded-xl font-bold shadow-lg transition transform active:scale-95"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Alert Modal -->
+    <div id="alertModal">
+        <div class="bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full mx-4 text-center">
+            <div class="mb-4 text-red-500 text-4xl">⚠️</div>
+            <h3 class="text-xl font-bold text-slate-800 mb-2">ไม่สามารถดำเนินการได้</h3>
+            <p id="alertMessage" class="text-slate-600 mb-6 font-bold"></p>
+            <button onclick="closeAlert()" class="w-full bg-slate-800 text-white py-2 rounded-lg font-bold hover:bg-slate-700 transition">รับทราบ</button>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">✔️ คัดลอกแล้ว</div>
+
+    <div class="max-w-[1900px] mx-auto">
+        <header class="mb-6 text-center no-print">
+            <div class="flex flex-col items-center gap-2 mb-2">
+                <h1 class="header-title">ระบบจัดการรายงาน <span class="highlight-mflow">M-Flow R11</span></h1>
+                <div class="batch-counter mt-1">
+                    <span>🔁 บันทึกไปแล้ว:</span>
+                    <span id="batchCountDisplay">0</span>
+                    <span>รอบ</span>
+                </div>
+                <div id="syncStatus" class="text-[10px] font-bold text-slate-400 mt-1">🔴 Offline</div>
+            </div>
+
+            <div class="flex justify-center mt-6 border-b-2 border-slate-200">
+                <button onclick="switchMode('audit')" id="tab-audit" class="tab-btn active">🔍 หน้าตรวจสอบ (Audit)</button>
+                <button onclick="switchMode('summary')" id="tab-summary" class="tab-btn">📊 หน้าสรุปผลรวม (Summary)</button>
+            </div>
+            
+            <div class="mt-6 flex flex-wrap justify-center gap-3">
+                <button id="mainSaveBtn" onclick="requestSave()" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-lg font-bold text-sm transition-all disabled:bg-slate-400 disabled:cursor-not-allowed">➕ บันทึกและบวกยอด</button>
+                <button onclick="openPremiumConfirm('current')" class="px-4 py-2 bg-white border border-slate-300 text-slate-600 rounded-lg hover:bg-slate-50 text-sm font-semibold">🧹 ล้างข้อมูลหน้าปัจจุบัน</button>
+                <button onclick="openPremiumConfirm('all')" class="px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100 text-sm font-semibold">🚨 ล้างข้อมูลทั้งหมด</button>
+            </div>
+        </header>
+
+        <main id="mainContent">
+            <!-- Table 1 -->
+            <div class="table-wrapper">
+                <div class="action-btn-container no-print">
+                    <button class="copy-table-btn" onclick="copyTableData('table1')">คัดลอกลงล็อค (A-U)</button>
+                    <button class="clear-table-btn" onclick="openPremiumConfirm('table1')">🗑️ ล้างตารางนี้</button>
+                </div>
+                <table id="table1">
+                    <thead>
+                        <tr><th colspan="8" class="bg-section-header" id="t1-title">ตารางที่ 1: ตรวจสอบยอดเงินและรายการ</th></tr>
+                        <tr class="bg-sub-header">
+                            <th class="w-40">รายการสรุป</th><th>จำนวนรายการ</th><th>จำนวนใบแจ้งหนี้</th><th>ค่าผ่านทาง</th>
+                            <th>ค่าเสียหาย 2 เท่า</th><th>ค่าปรับ 10 เท่า</th><th>ค่าปรับ 200 บาท</th><th>ยอดรวม</th>
+                        </tr>
+                    </thead>
+                    <tbody id="summaryBody">
+                        <tr class="summary-row" data-type="m">
+                            <td class="font-bold bg-slate-50 text-left px-4 text-[12px]">สมาชิก</td>
+                            <td><input type="text" data-key="m_qty" oninput="calculate()" onpaste="handlePaste(event)"><span class="display-val">0</span><span class="validation-note"></span></td>
+                            <td><input type="text" data-key="m_inv" oninput="calculate()" onpaste="handlePaste(event)"><span class="display-val">0</span></td>
+                            <td><input type="text" data-key="m_toll" oninput="calculate()" onpaste="handlePaste(event)"><span class="display-val">0</span><span class="validation-note"></span></td>
+                            <td><input type="text" data-key="m_dam" oninput="calculate()" onpaste="handlePaste(event)"><span class="display-val">0</span></td>
+                            <td><input type="text" data-key="m_f10" oninput="calculate()" onpaste="handlePaste(event)"><span class="display-val">0</span></td>
+                            <td><input type="text" data-key="m_f200" oninput="calculate()" onpaste="handlePaste(event)"><span class="display-val">0</span></td>
+                            <td><input type="text" data-key="m_total" class="font-bold" oninput="calculate()" onpaste="handlePaste(event)"><span class="display-val">0</span><span class="validation-note"></span></td>
+                        </tr>
+                        <tr class="summary-row" data-type="nm">
+                            <td class="font-bold bg-slate-50 text-left px-4 text-[12px]">ไม่ใช่สมาชิก</td>
+                            <td><input type="text" data-key="nm_qty" oninput="calculate()" onpaste="handlePaste(event)"><span class="display-val">0</span><span class="validation-note"></span></td>
+                            <td><input type="text" data-key="nm_inv" oninput="calculate()" onpaste="handlePaste(event)"><span class="display-val">0</span></td>
+                            <td><input type="text" data-key="nm_toll" oninput="calculate()" onpaste="handlePaste(event)"><span class="display-val">0</span><span class="validation-note"></span></td>
+                            <td><input type="text" data-key="nm_dam" oninput="calculate()" onpaste="handlePaste(event)"><span class="display-val">0</span></td>
+                            <td><input type="text" data-key="nm_f10" oninput="calculate()" onpaste="handlePaste(event)"><span class="display-val">0</span></td>
+                            <td><input type="text" data-key="nm_f200" oninput="calculate()" onpaste="handlePaste(event)"><span class="display-val">0</span></td>
+                            <td><input type="text" data-key="nm_total" class="font-bold" oninput="calculate()" onpaste="handlePaste(event)"><span class="display-val">0</span><span class="validation-note"></span></td>
+                        </tr>
+                        <tr class="bg-total footer-row">
+                            <td class="text-left px-4 text-[12px]">รวม</td>
+                            <td><input type="text" disabled><span class="display-val">0</span><span class="validation-note"></span></td>
+                            <td><input type="text" disabled><span class="display-val">0</span></td>
+                            <td><input type="text" disabled><span class="display-val">0</span><span class="validation-note"></span></td>
+                            <td><input type="text" disabled><span class="display-val">0</span></td>
+                            <td><input type="text" disabled><span class="display-val">0</span></td>
+                            <td><input type="text" disabled><span class="display-val">0</span></td>
+                            <td><input type="text" disabled><span class="display-val">0</span><span class="validation-note"></span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="dataTablesContainer"></div>
+        </main>
+    </div>
+
+    <!-- Firebase Core & Sync Modules -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, onSnapshot, updateDoc, setDoc, increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global State Variables (Matching exact required logic)
+        window.currentMode = 'audit';
+        window.auditData = { summary: {}, tables: {} };
+        window.totalData = { summary: {}, tables: {} };
+        window.batchCount = 0;
+        window.isSavedThisSession = false;
+
+        window.sections = [
+            { id: "success", title: "ตารางที่ 2: ชำระเงินสำเร็จ", rows: ["Counter Service", "Mobile Banking", "บัญชีบัตร Easy Pass", "บัญชีบัตร M-PASS", "บัญชีออมทรัพย์", "บัตรเครดิต/เดบิต"] },
+            { id: "failed", title: "ตารางที่ 3: ชำระเงินไม่สำเร็จ", rows: ["บัญชีบัตร Easy Pass", "บัญชีบัตร M-PASS", "บัญชีออมทรัพย์", "บัตรเครดิต/เดบิต"] },
+            { id: "pending", title: "ตารางที่ 4: รอดำเนินการชำระ", rows: ["บัญชีบัตร Easy Pass", "บัญชีออมทรัพย์", "บัตรเครดิต/เดบิต", "ยังไม่ระบุช่องทาง", "รายการโต้แย้งที่ไม่ได้ชำระ"] },
+            { id: "processing", title: "ตารางที่ 5: ระหว่างดำเนินการชำระ", rows: ["ยอดรวมทุกช่องทาง"] }
+        ];
+
+        // Firebase Initialization
+        let firebaseConfig = {};
+        try { if (typeof __firebase_config !== 'undefined' && __firebase_config) firebaseConfig = JSON.parse(__firebase_config); } catch (e) {}
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' && __app_id ? __app_id : 'mflow-sync-default';
+        const getDocRef = () => doc(db, 'artifacts', appId, 'public', 'data', 'mflow_r11', 'summary');
+
+        // Auth & Sync Listener
+        async function initApp() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (err) { console.error("Auth Error:", err); }
+        }
+
+        onAuthStateChanged(auth, (user) => {
+            if (!user) return;
+            const statusEl = document.getElementById('syncStatus');
+            
+            onSnapshot(getDocRef(), (snap) => {
+                if (snap.exists()) {
+                    statusEl.innerText = '🟢 Cloud Sync Online';
+                    statusEl.className = 'text-[10px] font-bold text-emerald-500 mt-1';
+                    const data = snap.data();
+                    let newTotalData = { summary: {}, tables: {} };
+                    
+                    window.sections.forEach(s => {
+                        const table = document.getElementById(`table-${s.id}`);
+                        if (table) newTotalData.tables[s.id] = Array.from({length: table.querySelectorAll('.data-row').length}, () => Array(22).fill("0"));
+                    });
+
+                    if (data.summary) Object.keys(data.summary).forEach(k => newTotalData.summary[k] = String(data.summary[k]));
+                    if (data.tables) {
+                        Object.keys(data.tables).forEach(k => {
+                            const match = k.match(/(.+)_r(\d+)_c(\d+)/);
+                            if (match && newTotalData.tables[match[1]] && newTotalData.tables[match[1]][match[2]]) {
+                                newTotalData.tables[match[1]][match[2]][match[3]] = String(data.tables[k]);
+                            }
+                        });
+                    }
+                    
+                    window.totalData = newTotalData;
+                    if (window.currentMode === 'summary') {
+                        window.loadFromState(window.totalData);
+                        window.calculate();
+                    }
+                } else {
+                    setDoc(getDocRef(), { summary: {}, tables: {} });
+                }
+            }, (err) => console.error("Snapshot error:", err));
+        });
+
+        // --- Core UI & Logic Functions ---
+        
+        window.updateBatchDisplay = function() {
+            const el = document.getElementById('batchCountDisplay');
+            if (el) el.innerText = window.batchCount;
+        }
+
+        window.updateSaveBtnUI = function() {
+            const btn = document.getElementById('mainSaveBtn');
+            if (window.currentMode === 'summary') {
+                btn.style.display = 'none';
+                return;
+            }
+            btn.style.display = 'block';
+            if (window.isSavedThisSession) {
+                btn.disabled = true;
+                btn.innerText = "✔️ บันทึกแล้ว (รอรอบใหม่)";
+                btn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                btn.classList.add('bg-slate-400');
+            } else {
+                btn.disabled = false;
+                btn.innerText = "➕ บันทึกและบวกยอด";
+                btn.classList.remove('bg-slate-400');
+                btn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+            }
+        }
+
+        window.requestSave = function() {
+            if (document.querySelectorAll('.valid-error-bg').length > 0) {
+                window.showAlert("พบข้อมูลไม่ถูกต้อง! กรุณาตรวจสอบช่องสีแดง");
+                return;
+            }
+            let hasData = false;
+            document.querySelectorAll('input:not([disabled])').forEach(i => { if(window.parseNum(i.value) > 0) hasData = true; });
+            if (!hasData) {
+                window.showAlert("ไม่พบข้อมูลสำหรับการบันทึก กรุณากรอกข้อมูลก่อน");
+                return;
+            }
+            window.openPremiumConfirm('save_audit');
+        }
+
+        window.resetCurrentSession = function() {
+            document.querySelectorAll('input:not([disabled])').forEach(i => i.value = ''); 
+            window.isSavedThisSession = false;
+            window.updateSaveBtnUI();
+            window.calculate();
+        }
+
+        window.openPremiumConfirm = function(target) {
+            const modal = document.getElementById('confirmModal');
+            const card = document.getElementById('modalCard');
+            const iconContainer = document.getElementById('modalIconContainer');
+            const iconInner = document.getElementById('modalIconInner');
+            const pulse = document.getElementById('modalPulse');
+            const title = document.getElementById('modalTitle');
+            const msg = document.getElementById('modalMessage');
+            const confirmBtn = document.getElementById('modalConfirmAction');
+
+            card.classList.remove('shake-effect');
+            let config = { title: 'ยืนยัน', message: 'คุณแน่ใจหรือไม่?', confirmText: 'ตกลง', type: 'warning', action: () => {} };
+
+            if (target === 'save_audit') {
+                config = {
+                    title: 'บันทึกและบวกยอด?',
+                    message: 'ข้อมูลชุดนี้จะถูกบวกเพิ่มเข้าไปในหน้าสรุปผล และระบบจะล็อคการบันทึกชั่วคราว',
+                    confirmText: 'ยืนยันการบันทึก',
+                    type: 'success',
+                    action: () => { window.sendToSummary(); }
+                };
+            } else if (target === 'all') {
+                config = {
+                    title: 'ล้างข้อมูลทั้งหมด?',
+                    message: 'ข้อมูลทั้งในเครื่องนี้ และ "ยอดรวมในคลาวด์" จะถูกลบถาวร รวมถึงจำนวนรอบด้วย!',
+                    confirmText: 'ล้างข้อมูลทั้งหมด',
+                    type: 'danger',
+                    action: async () => {
+                        try { await setDoc(getDocRef(), { summary: {}, tables: {} }); } catch(e) {}
+                        window.auditData = {summary:{}, tables:{}}; 
+                        window.totalData = {summary:{}, tables:{}}; 
+                        window.batchCount = 0;
+                        window.updateBatchDisplay();
+                        window.resetCurrentSession();
+                        window.showToast("🚨 รีเซ็ตระบบทั้งหมดเรียบร้อย");
+                    }
+                };
+                card.classList.add('shake-effect');
+            } else if (target === 'current') {
+                config = {
+                    title: 'ล้างหน้าปัจจุบัน?',
+                    message: 'ล้างข้อมูลที่คุณกรอกเพื่อเริ่มบันทึกรอบใหม่',
+                    confirmText: 'ล้างข้อมูล',
+                    type: 'warning',
+                    action: () => {
+                        window.resetCurrentSession();
+                        window.showToast("🧹 ล้างข้อมูลแล้ว");
+                    }
+                };
+            } else {
+                config = {
+                    title: 'ล้างข้อมูลตารางนี้?',
+                    message: 'ข้อมูลในตารางที่เลือกจะถูกรีเซ็ตเป็นค่าว่าง และปลดล็อคการบันทึก',
+                    confirmText: 'ล้างตาราง',
+                    type: 'warning',
+                    action: () => {
+                        const targetEl = document.getElementById(target);
+                        if (targetEl) {
+                            targetEl.querySelectorAll('input:not([disabled])').forEach(i => i.value = ''); 
+                            window.isSavedThisSession = false;
+                            window.updateSaveBtnUI();
+                            window.calculate();
+                            window.showToast("🗑️ ล้างตารางและปลดล็อคแล้ว");
+                        }
+                    }
+                };
+            }
+
+            if (config.type === 'danger') {
+                iconContainer.className = "icon-circle bg-red-100 text-red-600"; pulse.className = "pulse-ring bg-red-400";
+                confirmBtn.className = "flex-1 py-3 bg-gradient-to-r from-red-500 to-red-700 text-white rounded-xl font-bold shadow-lg";
+                iconInner.innerHTML = `<svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>`;
+            } else if (config.type === 'success') {
+                iconContainer.className = "icon-circle bg-emerald-100 text-emerald-600"; pulse.className = "pulse-ring bg-emerald-400";
+                confirmBtn.className = "flex-1 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-bold shadow-lg";
+                iconInner.innerHTML = `<svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+            } else {
+                iconContainer.className = "icon-circle bg-amber-100 text-amber-600"; pulse.className = "pulse-ring bg-amber-400";
+                confirmBtn.className = "flex-1 py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl font-bold shadow-lg";
+                iconInner.innerHTML = `<svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`;
+            }
+
+            title.innerText = config.title;
+            msg.innerText = config.message;
+            confirmBtn.innerText = config.confirmText;
+            confirmBtn.onclick = () => { config.action(); window.closeConfirmModal(); };
+            modal.classList.add('active');
+        }
+
+        window.closeConfirmModal = () => document.getElementById('confirmModal').classList.remove('active');
+        window.showAlert = (msg) => { document.getElementById('alertMessage').innerText = msg; document.getElementById('alertModal').style.display = 'flex'; }
+        window.closeAlert = () => document.getElementById('alertModal').style.display = 'none';
+        window.showToast = (msg) => { const t = document.getElementById('toast'); t.innerText = msg; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 2500); }
+        
+        window.parseNum = function(val) {
+            if (!val) return 0;
+            const n = parseFloat(String(val).replace(/,/g, ''));
+            return isNaN(n) ? 0 : n;
+        }
+
+        window.formatNumber = function(val) {
+            const n = window.parseNum(val);
+            return n.toLocaleString('en-US');
+        }
+
+        window.handlePaste = function(event) {
+            if (window.isSavedThisSession) {
+                event.preventDefault();
+                window.showAlert("ระบบล็อคการแก้ไขหลังบันทึก กรุณากด 'ล้างข้อมูลหน้าปัจจุบัน' ก่อนวางข้อมูลชุดใหม่");
+                return; 
+            }
+            
+            const clipboardData = event.clipboardData || window.clipboardData;
+            const pastedData = clipboardData.getData('text');
+            
+            if (pastedData.includes('\t') || pastedData.includes('\n')) {
+                event.preventDefault();
+                const currentRow = event.target.closest('tr');
+                const tbody = currentRow.parentElement;
+                const rowsInTbody = Array.from(tbody.querySelectorAll('tr'));
+                const startRowIdx = rowsInTbody.indexOf(currentRow);
+                const currentInputs = Array.from(currentRow.querySelectorAll('input'));
+                const startColIdx = currentInputs.indexOf(event.target);
+                
+                const rawRows = pastedData.trim().split(/\r?\n/);
+                
+                rawRows.forEach((rowData, rOffset) => {
+                    const targetRow = rowsInTbody[startRowIdx + rOffset];
+                    if (!targetRow || targetRow.classList.contains('bg-total')) return;
+                    
+                    const targetInputs = Array.from(targetRow.querySelectorAll('input'));
+                    const pastedCols = rowData.split('\t');
+                    let inputIdx = startColIdx;
+                    
+                    pastedCols.forEach(cellText => {
+                        const trimmed = cellText.trim();
+                        // SKIP EMPTY RULE
+                        if (trimmed === "") return; 
+                        
+                        while (inputIdx < targetInputs.length) {
+                            const inp = targetInputs[inputIdx];
+                            if (inp && !inp.readOnly && !inp.disabled) {
+                                inp.value = trimmed; inputIdx++; break; 
+                            }
+                            inputIdx++;
+                        }
+                    });
+                });
+                window.calculate();
+            }
+        }
+
+        window.calculate = function() {
+            let mTotalQty = 0, nmTotalQty = 0, mTotalAmt = 0, nmTotalAmt = 0;
+            window.sections.forEach(s => {
+                const table = document.getElementById(`table-${s.id}`);
+                if (!table) return;
+                const rows = table.querySelectorAll('.data-row');
+                const footerRows = table.querySelectorAll('.footer-row td');
+                let colSums = new Array(22).fill(0);
+                
+                rows.forEach(row => {
+                    const mCells = row.querySelectorAll('.m-cell'), nmCells = row.querySelectorAll('.nm-cell');
+                    const m = window.calcGrp(mCells), nm = window.calcGrp(nmCells);
+                    
+                    if (window.currentMode === 'audit') {
+                        window.updateUI(row.querySelector('.m-qty'), m.qty); window.updateUI(row.querySelector('.m-amt'), m.amt);
+                        window.updateUI(row.querySelector('.nm-qty'), nm.qty); window.updateUI(row.querySelector('.nm-amt'), nm.amt);
+                        window.updateUI(row.querySelector('.g-qty'), m.qty + nm.qty); window.updateUI(row.querySelector('.g-amt'), m.amt + nm.amt);
+                    }
+                    
+                    row.querySelectorAll('td').forEach(td => {
+                        const inp = td.querySelector('input'), span = td.querySelector('.display-val');
+                        if (inp && span) span.innerText = window.formatNumber(inp.value);
+                    });
+
+                    mTotalQty += m.qty; nmTotalQty += nm.qty; mTotalAmt += m.amt; nmTotalAmt += nm.amt;
+                    row.querySelectorAll('input').forEach((inp, idx) => colSums[idx] += window.parseNum(inp.value));
+                });
+
+                footerRows.forEach((td, idx) => {
+                    if (idx === 0) return;
+                    const inp = td.querySelector('input'), span = td.querySelector('.display-val');
+                    if (window.currentMode === 'audit') {
+                        window.updateUI(inp, colSums[idx-1]);
+                    } else if (inp) {
+                        inp.value = colSums[idx-1].toString();
+                        if (span) span.innerText = window.formatNumber(colSums[idx-1]);
+                    }
+                });
+            });
+
+            const mRow = document.querySelector('[data-type="m"]'), nmRow = document.querySelector('[data-type="nm"]');
+            if (window.currentMode === 'audit') {
+                window.updateUI(mRow.querySelector('[data-key="m_qty"]'), mTotalQty); window.updateUI(mRow.querySelector('[data-key="m_toll"]'), mTotalAmt);
+                window.updateUI(nmRow.querySelector('[data-key="nm_qty"]'), nmTotalQty); window.updateUI(nmRow.querySelector('[data-key="nm_toll"]'), nmTotalAmt);
+            }
+
+            let t1Cols = new Array(7).fill(0);
+            [mRow, nmRow].forEach(row => {
+                if (window.currentMode === 'audit') {
+                    let sum = 0;
+                    row.querySelectorAll('input:not([data-key*="total"]):not([data-key*="qty"]):not([data-key*="inv"])').forEach(i => sum += window.parseNum(i.value));
+                    window.updateUI(row.querySelector('[data-key*="total"]'), sum);
+                }
+                row.querySelectorAll('td').forEach((td, idx) => {
+                    const inp = td.querySelector('input');
+                    if (inp) {
+                        t1Cols[idx-1] += window.parseNum(inp.value);
+                        const span = td.querySelector('.display-val');
+                        if (span) span.innerText = window.formatNumber(inp.value);
+                    }
+                });
+            });
+
+            const fRow = document.querySelector('#summaryBody .footer-row');
+            fRow.querySelectorAll('td').forEach((td, idx) => {
+                if (idx === 0) return;
+                const inp = td.querySelector('input'), span = td.querySelector('.display-val');
+                if (window.currentMode === 'audit') window.updateUI(inp, t1Cols[idx-1]);
+                else if (inp) {
+                    inp.value = t1Cols[idx-1].toString();
+                    if (span) span.innerText = window.formatNumber(t1Cols[idx-1]);
+                }
+            });
+        }
+
+        window.calcGrp = function(cells) {
+            let qty = 0, amt = 0;
+            cells.forEach((c, i) => {
+                const v = window.parseNum(c.value); qty += v; const type = i % 4;
+                if (type === 0) amt += v * 30; else if (type === 1) amt += v * 50; else if (type === 2) amt += v * 70;
+            });
+            return { qty, amt };
+        }
+
+        window.updateUI = function(input, target) {
+            if (!input) return;
+            const parent = input.parentElement, note = parent.querySelector('.validation-note'), span = parent.querySelector('.display-val'), val = window.parseNum(input.value);
+            parent.classList.remove('valid-success-bg', 'valid-error-bg'); input.classList.remove('valid-success-text', 'valid-error-text');
+            if (span) span.innerText = window.formatNumber(val);
+
+            if (val > 0 && Math.abs(val - target) < 0.1) {
+                parent.classList.add('valid-success-bg'); input.classList.add('valid-success-text');
+                if (note) { note.innerText = `(✓)`; note.className = 'validation-note text-green-600 font-bold'; }
+            } else if (val > 0 && Math.abs(val - target) >= 0.1) {
+                parent.classList.add('valid-error-bg'); input.classList.add('valid-error-text');
+                if (note) { note.innerText = `(! ${window.formatNumber(target)})`; note.className = 'validation-note text-red-600 font-bold'; }
+            } else if (target > 0) {
+                if (note) { note.innerText = `(ควรเป็น ${window.formatNumber(target)})`; note.className = 'validation-note text-slate-400'; }
+            } else if (note) note.innerText = '';
+        }
+
+        window.renderTables = function() {
+            const container = document.getElementById('dataTablesContainer');
+            container.innerHTML = window.sections.map(s => `
+                <div class="table-wrapper">
+                    <div class="action-btn-container no-print">
+                        <button class="copy-table-btn" onclick="copyTableData('table-${s.id}')">คัดลอกลงล็อค (B-AI)</button>
+                        <button class="clear-table-btn" onclick="openPremiumConfirm('table-${s.id}')">🗑️ ล้างตารางนี้</button>
+                    </div>
+                    <table id="table-${s.id}">
+                        <thead>
+                            <tr><th colspan="23" class="bg-section-header">${s.title}</th></tr>
+                            <tr class="bg-sub-header"><th rowspan="3" class="sticky-col">ช่องทางการชำระ</th><th colspan="14">สมาชิก</th><th colspan="6">ไม่ใช่สมาชิก</th><th rowspan="3" class="w-16">รายการรวม</th><th rowspan="3" class="w-20">เงินรวม</th></tr>
+                            <tr class="text-[9px]"><th colspan="4">ไทย</th><th colspan="4">ต่างชาติ</th><th colspan="4">นิติบุคคล</th><th rowspan="2" class="w-12">รายการ</th><th rowspan="2" class="w-14">เงิน</th><th colspan="4">ประเภทรถ</th><th rowspan="2" class="w-12">รายการ</th><th rowspan="2" class="w-14">เงิน</th></tr>
+                            <tr class="text-[8px] bg-slate-50">${'<th>C1</th><th>C2</th><th>C3</th><th>C4</th>'.repeat(4)}</tr>
+                        </thead>
+                        <tbody>
+                            ${s.rows.map(r => `
+                                <tr class="data-row">
+                                    <td class="sticky-col font-medium text-[11px]">${r}</td>
+                                    ${Array(12).fill('<td><input type="text" class="m-cell" oninput="calculate()" onpaste="handlePaste(event)"><span class="display-val">0</span></td>').join('')}
+                                    <td><input type="text" class="m-qty bg-amber-50" oninput="calculate()" onpaste="handlePaste(event)" disabled><span class="display-val">0</span><span class="validation-note"></span></td>
+                                    <td><input type="text" class="m-amt bg-amber-50" oninput="calculate()" onpaste="handlePaste(event)" disabled><span class="display-val">0</span><span class="validation-note"></span></td>
+                                    ${Array(4).fill('<td><input type="text" class="nm-cell" oninput="calculate()" onpaste="handlePaste(event)"><span class="display-val">0</span></td>').join('')}
+                                    <td><input type="text" class="nm-qty bg-amber-50" oninput="calculate()" onpaste="handlePaste(event)" disabled><span class="display-val">0</span><span class="validation-note"></span></td>
+                                    <td><input type="text" class="nm-amt bg-amber-50" oninput="calculate()" onpaste="handlePaste(event)" disabled><span class="display-val">0</span><span class="validation-note"></span></td>
+                                    <td><input type="text" class="g-qty bg-blue-50 font-bold" disabled><span class="display-val">0</span></td>
+                                    <td><input type="text" class="g-amt bg-blue-50 font-bold" disabled><span class="display-val">0</span></td>
+                                </tr>
+                            `).join('')}
+                            <tr class="bg-total footer-row"><td class="sticky-col">รวม</td>${Array(22).fill('<td><input type="text" disabled><span class="display-val">0</span><span class="validation-note"></span></td>').join('')}</tr>
+                        </tbody>
+                    </table>
+                </div>
+            `).join('');
+        }
+
+        window.copyTableData = function(tableId) {
+            const table = document.getElementById(tableId), rows = Array.from(table.querySelectorAll('tbody tr'));
+            let text = "";
+            if (tableId === 'table1') {
+                text = rows.map(r => Array.from(r.querySelectorAll('input')).map(i => i.value || "0").join('\t\t\t')).join('\n');
+            } else {
+                text = rows.map(row => {
+                    const v = Array.from(row.querySelectorAll('input')).map(i => i.value || "0");
+                    return v[0] + "\t" + v[1] + "\t" + v[2] + "\t\t" + v[3] + "\t" + v[4] + "\t\t" + v[5] + "\t" + v[6] + "\t\t\t" + v[7] + "\t" + v[8] + "\t\t" + v[9] + "\t" + v[10] + "\t\t\t" + v[11] + "\t" + v[12] + "\t\t" + v[13] + "\t" + v[14] + "\t\t\t" + v[15] + "\t\t" + v[16] + "\t\t" + v[17] + "\t\t" + v[18] + "\t\t" + v[19] + "\t" + v[20] + "\t" + v[21];
+                }).join("\n");
+            }
+            const el = document.createElement('textarea'); el.value = text; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); window.showToast("📋 คัดลอกข้อมูลเรียบร้อย");
+        }
+
+        window.switchMode = function(mode) {
+            window.saveToState(window.currentMode);
+            window.currentMode = mode;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`tab-${mode}`).classList.add('active');
+            document.getElementById('mainBody').className = `p-4 md:p-8 ${mode}-mode`;
+            
+            if (mode === 'audit') window.loadFromState(window.auditData); 
+            else window.loadFromState(window.totalData);
+            
+            window.updateSaveBtnUI();
+            window.calculate();
+        }
+
+        window.saveToState = function(mode) {
+            const data = { summary: {}, tables: {} };
+            document.querySelectorAll('input[data-key]').forEach(i => data.summary[i.dataset.key] = i.value);
+            window.sections.forEach(s => {
+                const table = document.getElementById(`table-${s.id}`);
+                if (table) data.tables[s.id] = Array.from(table.querySelectorAll('.data-row')).map(row => Array.from(row.querySelectorAll('input')).map(i => i.value));
+            });
+            if (mode === 'audit') window.auditData = data; else window.totalData = data;
+        }
+
+        window.loadFromState = function(data) {
+            document.querySelectorAll('input:not([disabled])').forEach(i => i.value = '');
+            Object.keys(data.summary || {}).forEach(k => { const inp = document.querySelector(`input[data-key="${k}"]`); if (inp) inp.value = data.summary[k]; });
+            Object.keys(data.tables || {}).forEach(sId => {
+                const rows = document.querySelectorAll(`#table-${sId} .data-row`);
+                data.tables[sId]?.forEach((rowVals, rIdx) => {
+                    const inputs = rows[rIdx]?.querySelectorAll('input');
+                    rowVals.forEach((v, vIdx) => { if (inputs && inputs[vIdx] && !inputs[vIdx].disabled) inputs[vIdx].value = v; });
+                });
+            });
+        }
+
+        // --- Core Multi-User Sync Action ---
+        window.sendToSummary = async function() {
+            if(!auth.currentUser) await initApp();
+            
+            window.saveToState('audit');
+            
+            const updates = {};
+            let hasData = false;
+
+            Object.keys(window.auditData.summary).forEach(k => {
+                const val = window.parseNum(window.auditData.summary[k]);
+                if (val > 0) { updates[`summary.${k}`] = increment(val); hasData = true; }
+            });
+
+            Object.keys(window.auditData.tables).forEach(tId => {
+                window.auditData.tables[tId].forEach((row, rIdx) => {
+                    row.forEach((val, cIdx) => {
+                        const numVal = window.parseNum(val);
+                        if (numVal > 0) { updates[`tables.${tId}_r${rIdx}_c${cIdx}`] = increment(numVal); hasData = true; }
+                    });
+                });
+            });
+
+            try {
+                if (hasData) {
+                    await setDoc(getDocRef(), updates, { merge: true });
+                }
+                
+                window.batchCount++;
+                window.isSavedThisSession = true;
+                window.updateBatchDisplay();
+                window.updateSaveBtnUI();
+                
+                window.showToast(`✔️ บันทึกรอบที่ ${window.batchCount} ส่งขึ้น Cloud สำเร็จ!`);
+            } catch (err) {
+                console.error("Cloud sync error:", err);
+                window.showToast("❌ เกิดข้อผิดพลาดในการเชื่อมต่อฐานข้อมูล");
+            }
+        }
+
+        initApp();
+        window.onload = () => { window.renderTables(); window.updateSaveBtnUI(); window.calculate(); };
+    </script>
+</body>
+</html>
