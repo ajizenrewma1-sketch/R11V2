@@ -420,16 +420,31 @@ function getTableDataArray(tableId) {
                     showToast("🧹 ล้างหน้าตรวจสอบเรียบร้อย");
                 });
             } else {
-                openConfirmModal('danger', 'รีเซ็ตยอดสะสมทั้งหมด?', 'ระวัง! ข้อมูลสรุปผลสะสมทั้งหมดและรอบการบันทึกจะถูกรีเซ็ตเป็นศูนย์ทันที', () => {
+                openConfirmModal('danger', 'รีเซ็ตยอดสะสมใน Cloud?', 'ระวัง! ข้อมูลสรุปผลสะสมทั้งหมดที่เคยบันทึกไว้ใน Google Sheet จะถูกลบทิ้งถาวร ไม่สามารถกู้คืนได้', async () => {
+            try {
+                showToast("⏳ กำลังล้างข้อมูลใน Cloud...");
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: "clear_all" }) // ส่งคำสั่งล้างข้อมูล
+                });
+                const result = await response.json();
+
+                if (result.status === "success") {
+                    // ล้างตัวเลขในหน้าจอ
                     document.querySelectorAll('#page-cumulative .num-input-cum').forEach(i => i.value = '');
                     saveCounter = 0;
                     savedHistory = []; 
                     document.getElementById('save-count-badge').innerText = "0 รอบ";
                     calculateCumulativeTotals();
-                    showToast("💥 รีเซ็ตข้อมูลสะสมทั้งหมดแล้ว");
-                });
+                    showToast("💥 ล้างข้อมูลใน Cloud และรีเซ็ตหน้าจอสำเร็จ!");
+                }
+            } catch (error) {
+                console.error("Clear Cloud Error:", error);
+                showToast("❌ ล้างข้อมูลไม่สำเร็จ");
             }
-        }
+        });
+    }
+}
 
         function switchTab(t) {
             currentTab = t;
