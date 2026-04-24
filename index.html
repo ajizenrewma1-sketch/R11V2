@@ -274,6 +274,25 @@ async function fetchCloudData() {
         const response = await fetch(SCRIPT_URL);
         const cloudData = await response.json();
 
+// --- เพิ่มส่วนนี้เข้าไป (วางต่อจาก cloudData ได้เลย) ---
+        // ตรวจสอบว่าถ้าไม่มีข้อมูล (กรณีถูกเครื่องอื่นลบ) ให้ล้างหน้าจอเป็น 0
+        if (!cloudData || !cloudData.summary || cloudData.summary.length === 0) {
+            console.log("ไม่พบข้อมูลบน Cloud กำลังรีเซ็ตหน้าจอเป็น 0...");
+            
+            // ล้างช่องทั้งหมดในหน้าสะสม
+            document.querySelectorAll('#page-cumulative .num-input-cum').forEach(input => {
+                const isMoney = input.placeholder.includes('.00');
+                input.value = formatNumber(0, isMoney ? 2 : 0);
+            });
+            
+            // รีเซ็ตตารางย่อย 2-5 เป็น 0
+            renderCumulativeTables({ "success": [], "failed": [], "pending": [], "processing": [] });
+            
+            document.getElementById('save-count-badge').innerText = "0 รอบ";
+            return; // จบการทำงาน ไม่ต้องไปทำข้างล่างต่อ
+        }
+        // ----------------------------------------------------
+
         // --- ส่วนที่ 1: อัปเดตตารางสรุป (ตารางที่ 1) ---
         const sCumBody = document.querySelector('.summary-body-cum');
         if (sCumBody && cloudData.summary) {
@@ -699,6 +718,19 @@ async function executeSave(fingerprint) {
                 createTable(c.title, c.id, c.chs, 'dynamic-tables-cum', true);
             });
             setTimeout(() => { validateAll(); calculateCumulativeTotals(); }, 100);
+// --- เพิ่มส่วนนี้เข้าไปครับ ---
+    // สั่งให้ดึงข้อมูลจาก Cloud มาแสดงครั้งแรกทันทีที่เปิดหน้าเว็บ
+    fetchCloudData(); 
+
+    // ตั้งเวลาให้ตรวจสอบข้อมูลใหม่จาก Cloud ทุกๆ 60 วินาที
+    setInterval(() => {
+        // จะดึงข้อมูลอัตโนมัติเฉพาะเมื่อผู้ใช้งานเปิดอยู่ที่หน้า "สรุปรายงานสะสม" (Cumulative)
+        if (typeof currentTab !== 'undefined' && currentTab === 'cumulative') {
+            fetchCloudData();
+        }
+    }, 20000); 
+    // -------------------------
+
         };
     </script>
 </body>
