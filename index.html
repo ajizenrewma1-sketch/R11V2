@@ -24,10 +24,9 @@
         
         .cum-table-style td, .cum-table-style th {
             white-space: nowrap;
-            padding: 4px 3px; /* ลด padding เพื่อให้ตารางแคบลง */
+            padding: 4px 3px;
         }
 
-        /* ปรับขนาดช่องตัวเลขหน้าสะสมให้กระชับขึ้น (ลดจาก 65px เหลือ 58px) */
         .num-input-cum { 
             background-color: #f0f9ff; 
             cursor: default; 
@@ -55,7 +54,6 @@
             display: block; font-size: 0.7rem; font-weight: 800; line-height: 1.1; margin-top: 1px; position: relative; z-index: 5; text-shadow: 0px 0px 1px rgba(255,255,255,0.8); min-height: 12px;
         }
 
-        /* Styling for M-Flow Title based on image */
         .mflow-title {
             font-size: 1.8rem;
             font-weight: 900;
@@ -63,7 +61,7 @@
             display: inline-block;
             letter-spacing: -1px;
             position: relative;
-            color: #00338d; /* Dark Blue */
+            color: #00338d;
             text-shadow: 1px 1px 0px #fff, 3px 3px 0px rgba(0,0,0,0.1);
         }
         
@@ -74,7 +72,7 @@
             left: 0;
             width: 100%;
             height: 4px;
-            background: #ee2e24; /* Red accent line */
+            background: #ee2e24;
             border-radius: 2px;
         }
 
@@ -108,37 +106,17 @@
         .tab-btn { padding: 12px 24px; cursor: pointer; border-bottom: 3px solid transparent; font-weight: bold; transition: all 0.3s; }
         .tab-btn.active { border-bottom-color: #2563eb; color: #2563eb; background-color: white; }
 
-        .btn-clear-table {
-            font-size: 0.7rem; background-color: #ef4444; color: white; padding: 4px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.2s;
-        }
+        .btn-clear-table { font-size: 0.7rem; background-color: #ef4444; color: white; padding: 4px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn-copy-table { font-size: 0.7rem; background-color: #4b5563; color: white; padding: 4px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
 
-        .btn-copy-table {
-            font-size: 0.7rem; background-color: #4b5563; color: white; padding: 4px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.2s;
-        }
-        .btn-copy-table:hover { background-color: #1f2937; }
-
-        .modal-overlay {
-            display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.6); backdrop-filter: blur(4px); align-items: center; justify-content: center;
-        }
+        .modal-overlay { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(4px); align-items: center; justify-content: center; }
         .modal-overlay.active { display: flex; }
-        .modal-card { 
-            background: white; padding: 2rem; border-radius: 20px; max-width: 450px; width: 90%; text-align: center;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); animation: modal-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        .modal-icon-container {
-            width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;
-        }
-        .icon-warning { background: #fff7ed; color: #f97316; border: 4px solid #ffedd5; }
-        .icon-danger { background: #fef2f2; color: #ef4444; border: 4px solid #fee2e2; }
-        .icon-info { background: #eff6ff; color: #3b82f6; border: 4px solid #dbeafe; }
+        .modal-card { background: white; padding: 2rem; border-radius: 20px; max-width: 450px; width: 90%; text-align: center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); animation: modal-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
 
         .counter-badge { background: #3b82f6; color: white; padding: 2px 12px; border-radius: 20px; font-size: 0.9rem; font-weight: bold; }
+        #sync-timer-badge { font-family: monospace; transition: all 0.3s ease; }
         
-        #toast {
-            visibility: hidden; min-width: 250px; background-color: #1f2937; color: #fff; text-align: center; border-radius: 12px;
-            padding: 16px; position: fixed; z-index: 2000; left: 50%; transform: translateX(-50%); bottom: 30px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
-        }
+        #toast { visibility: hidden; min-width: 250px; background-color: #1f2937; color: #fff; text-align: center; border-radius: 12px; padding: 16px; position: fixed; z-index: 2000; left: 50%; transform: translateX(-50%); bottom: 30px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
         #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
 
         @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
@@ -151,7 +129,6 @@
 
     <div id="toast">บันทึกสำเร็จ!</div>
 
-    <!-- Smart Modal -->
     <div id="confirm-modal" class="modal-overlay">
         <div class="modal-card">
             <div id="modal-icon-box" class="modal-icon-container">
@@ -181,6 +158,10 @@
                 <div class="text-right">
                     <div class="text-[0.65rem] text-gray-400 uppercase font-bold tracking-widest">สะสมแล้ว</div>
                     <div id="save-count-badge" class="counter-badge">0 รอบ</div>
+                </div>
+                <div class="text-right ml-4 border-l pl-4 border-gray-200">
+                    <div class="text-[0.65rem] text-gray-400 uppercase font-bold tracking-widest">Cloud Sync</div>
+                    <div id="sync-timer-badge" class="bg-white text-blue-600 px-3 py-1 rounded-full font-black text-sm border border-blue-100 shadow-sm">20s</div>
                 </div>
                 <div class="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -241,122 +222,78 @@
         let saveCounter = 0;
         let hasValidationErrors = false;
         let savedHistory = []; 
+        let syncTimeLeft = 20;
 
-// === วางโค้ดส่วนนี้ (1) ===
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyF4gpfPD7-Ket7HPKNLjtX6TxPQewKmFwMkd9GZe0xPuM4aKjLqDmu4afawB2Lz4IK/exec"; 
 
-       // วางไว้ประมาณบรรทัดที่ 147 ต่อจาก SCRIPT_URL
-function getTableDataArray(tableId) {
-    const table = document.getElementById(tableId); 
-    if (!table) {
-        console.error("หาตารางไม่เจอ ID:", tableId);
-        return [];
-    }
-    // ดึงเฉพาะ input .num-input ของหน้าแรก และไม่เอาแถวรวม (total-row)
-    return Array.from(table.querySelectorAll('tbody tr:not(.total-row) .num-input'))
-                .map(i => unformatNumber(i.value));
-}
+        async function fetchCloudData() {
+            try {
+                const response = await fetch(SCRIPT_URL);
+                const cloudData = await response.json();
 
-        function getSummaryDataArray() {
-            const rows = document.querySelectorAll('.summary-body-verify tr:not(.total-row)');
-            let data = [];
-            rows.forEach(row => {
-                const inputs = Array.from(row.querySelectorAll('.num-input'));
-                data.push(inputs.map(input => unformatNumber(input.value)));
-            });
-            return data;
-        }
-        // ==========================
+                if (!cloudData || !cloudData.summary || cloudData.summary.length === 0) {
+                    document.querySelectorAll('#page-cumulative .num-input-cum').forEach(input => {
+                        const isMoney = input.placeholder.includes('.00');
+                        input.value = formatNumber(0, isMoney ? 2 : 0);
+                    });
+                    document.getElementById('save-count-badge').innerText = "0 รอบ";
+                    return;
+                }
 
-async function fetchCloudData() {
-    try {
-        // ดึงข้อมูลจาก Google Script
-        const response = await fetch(SCRIPT_URL);
-        const cloudData = await response.json();
-
-// --- เพิ่มส่วนนี้เข้าไป (วางต่อจาก cloudData ได้เลย) ---
-        // ตรวจสอบว่าถ้าไม่มีข้อมูล (กรณีถูกเครื่องอื่นลบ) ให้ล้างหน้าจอเป็น 0
-        if (!cloudData || !cloudData.summary || cloudData.summary.length === 0) {
-            console.log("ไม่พบข้อมูลบน Cloud กำลังรีเซ็ตหน้าจอเป็น 0...");
-            
-            // ล้างช่องทั้งหมดในหน้าสะสม
-            document.querySelectorAll('#page-cumulative .num-input-cum').forEach(input => {
-                const isMoney = input.placeholder.includes('.00');
-                input.value = formatNumber(0, isMoney ? 2 : 0);
-            });
-            
-            // รีเซ็ตตารางย่อย 2-5 เป็น 0
-            renderCumulativeTables({ "success": [], "failed": [], "pending": [], "processing": [] });
-            
-            document.getElementById('save-count-badge').innerText = "0 รอบ";
-            return; // จบการทำงาน ไม่ต้องไปทำข้างล่างต่อ
-        }
-        // ----------------------------------------------------
-
-        // --- ส่วนที่ 1: อัปเดตตารางสรุป (ตารางที่ 1) ---
-        const sCumBody = document.querySelector('.summary-body-cum');
-        if (sCumBody && cloudData.summary) {
-            const rows = sCumBody.querySelectorAll('tr:not(.total-row)');
-            cloudData.summary.forEach((rowData, rIdx) => {
-                if (rows[rIdx]) {
-                    const inputs = rows[rIdx].querySelectorAll('.num-input-cum');
-                    rowData.forEach((val, iIdx) => {
-                        if (inputs[iIdx]) {
-                            // ใส่ค่าลงช่อง และฟอร์แมตตัวเลข (ทศนิยม 2 ตำแหน่งสำหรับเงิน)
-                            const isMoney = [2, 3, 4, 5, 6, 7].includes(iIdx);
-                            inputs[iIdx].value = formatNumber(val, isMoney ? 2 : 0);
+                // อัปเดตตารางสรุป
+                const sCumBody = document.querySelector('.summary-body-cum');
+                if (sCumBody && cloudData.summary) {
+                    const rows = sCumBody.querySelectorAll('tr:not(.total-row)');
+                    cloudData.summary.forEach((rowData, rIdx) => {
+                        if (rows[rIdx]) {
+                            const inputs = rows[rIdx].querySelectorAll('.num-input-cum');
+                            rowData.forEach((val, iIdx) => {
+                                if (inputs[iIdx]) {
+                                    const isMoney = [2, 3, 4, 5, 6, 7].includes(iIdx);
+                                    inputs[iIdx].value = formatNumber(val, isMoney ? 2 : 0);
+                                }
+                            });
                         }
                     });
                 }
-            });
-        }
 
-        // --- ส่วนที่ 2: อัปเดตตารางย่อย 2-5 (ช่องใครช่องมัน) ---
-        const tableIds = ['success', 'failed', 'pending', 'processing'];
-        tableIds.forEach(id => {
-            const table = document.getElementById(`${id}-table-cum`);
-            if (table && cloudData.tables[id]) {
-                // ดึงช่อง input ทั้งหมดในตารางนั้นๆ (เรียงลำดับตามที่ส่งมาจาก Script)
-                const allInputs = table.querySelectorAll('tbody tr:not(.total-row) .num-input-cum');
-                const dataArray = cloudData.tables[id];
-                
-                allInputs.forEach((input, idx) => {
-                    if (dataArray[idx] !== undefined) {
-                        // ตรวจสอบว่าเป็นช่องจำนวนเงินหรือไม่ (อิงตาม placeholder .00)
-                        const isMoney = input.placeholder.includes('.00');
-                        input.value = formatNumber(dataArray[idx], isMoney ? 2 : 0);
+                // อัปเดตตารางย่อย 2-5
+                const tableIds = ['success', 'failed', 'pending', 'processing'];
+                tableIds.forEach(id => {
+                    const table = document.getElementById(`${id}-table-cum`);
+                    if (table && cloudData.tables[id]) {
+                        const allInputs = table.querySelectorAll('tbody tr:not(.total-row) .num-input-cum');
+                        const dataArray = cloudData.tables[id];
+                        allInputs.forEach((input, idx) => {
+                            if (dataArray[idx] !== undefined) {
+                                const isMoney = input.placeholder.includes('.00');
+                                input.value = formatNumber(dataArray[idx], isMoney ? 2 : 0);
+                            }
+                        });
                     }
                 });
+
+                calculateCumulativeTotals();
+                // (ลบ showToast ออกเพื่อให้เงียบตามคำขอ)
+            } catch (e) {
+                console.error("Cloud Fetch Error:", e);
             }
-        });
+        }
 
-        // สั่งให้หน้าเว็บคำนวณแถว "ยอดรวม" (แถวสีเทาด้านล่างสุด) ใหม่
-        calculateCumulativeTotals();
-        
-        showToast("🔄 อัปเดตยอดสะสมจาก Cloud เรียบร้อยแล้ว");
-    } catch (e) {
-        console.error("Cloud Fetch Error:", e);
-        showToast("⚠️ ดึงข้อมูลสะสมไม่สำเร็จ");
-    }
-}
+        function getSummaryDataArray() {
+            const rows = document.querySelectorAll('.summary-body-verify tr:not(.total-row)');
+            return Array.from(rows).map(row => 
+                Array.from(row.querySelectorAll('.num-input')).map(i => unformatNumber(i.value))
+            );
+        }
 
-function getSummaryDataArray() {
-    const rows = document.querySelectorAll('.summary-body-verify tr:not(.total-row)');
-    return Array.from(rows).map(row => 
-        Array.from(row.querySelectorAll('.num-input')).map(i => unformatNumber(i.value))
-    );
-}
+        function getTableDataArray(tableId) {
+            const table = document.getElementById(tableId); 
+            if (!table) return [];
+            return Array.from(table.querySelectorAll('tbody tr:not(.total-row) .num-input'))
+                        .map(i => unformatNumber(i.value));
+        }
 
-function getTableDataArray(tableId) {
-    // ใช้ tableId ตรงๆ เพราะใน executeSave เราส่ง 'success-table' ไปแล้ว
-    const table = document.getElementById(tableId); 
-    if (!table) {
-        console.error("หาตารางไม่เจอ ID:", tableId);
-        return [];
-    }
-    return Array.from(table.querySelectorAll('tbody tr:not(.total-row) .num-input'))
-                .map(i => unformatNumber(i.value));
-}
         function formatNumber(n, d = 0) {
             if (n === 0 && d === 0) return "0";
             if (!n && n !== 0) return "";
@@ -388,20 +325,16 @@ function getTableDataArray(tableId) {
 
         function handleSmartPaste(e) {
             if (e.target.tagName !== 'INPUT' || !e.target.classList.contains('num-input')) return;
-            const clipboardData = e.clipboardData || window.clipboardData;
-            const pastedText = clipboardData.getData('text');
+            const pastedText = (e.clipboardData || window.clipboardData).getData('text');
             let values = pastedText.split(/[\t\n\r]/).map(v => v.trim()).filter(v => v !== "");
             if (values.length > 1) {
                 e.preventDefault();
-                const table = e.target.closest('table');
-                const allInputs = Array.from(table.querySelectorAll('.num-input'));
+                const allInputs = Array.from(e.target.closest('table').querySelectorAll('.num-input'));
                 const startIndex = allInputs.indexOf(e.target);
-                if (startIndex === -1) return;
                 let valueIdx = 0;
                 for (let i = startIndex; i < allInputs.length && valueIdx < values.length; i++) {
                     const input = allInputs[i];
-                    const val = unformatNumber(values[valueIdx]);
-                    input.value = formatNumber(val, input.placeholder.includes('.00') ? 2 : 0);
+                    input.value = formatNumber(unformatNumber(values[valueIdx]), input.placeholder.includes('.00') ? 2 : 0);
                     valueIdx++;
                 }
                 validateAll();
@@ -418,13 +351,9 @@ function getTableDataArray(tableId) {
             document.getElementById('modal-desc').innerText = desc;
             iconBox.className = "modal-icon-container " + (type === 'danger' ? 'icon-danger' : (type === 'info' ? 'icon-info' : 'icon-warning'));
             confirmBtn.className = "flex-1 px-6 py-3 text-white rounded-xl font-bold shadow-lg transition active:scale-95 " + (type === 'danger' ? 'bg-red-500 hover:bg-red-600' : (type === 'info' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-orange-500 hover:bg-orange-600'));
-            if(type === 'danger') {
-                iconPath.setAttribute('d', 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z');
-            } else if (type === 'info') {
-                iconPath.setAttribute('d', 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z');
-            } else {
-                iconPath.setAttribute('d', 'M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z');
-            }
+            if(type === 'danger') iconPath.setAttribute('d', 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z');
+            else if (type === 'info') iconPath.setAttribute('d', 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z');
+            else iconPath.setAttribute('d', 'M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z');
             confirmBtn.onclick = () => { onConfirm(); closeConfirmModal(); };
             modal.classList.add('active');
         }
@@ -433,37 +362,28 @@ function getTableDataArray(tableId) {
 
         function handleClearCurrentPage() {
             if (currentTab === 'verify') {
-                openConfirmModal('warning', 'ล้างหน้าตรวจสอบ?', 'คุณกำลังจะล้างข้อมูลที่กรอกไว้ในหน้าตรวจสอบทั้งหมด (ยอดสะสมจะไม่ถูกผลกระทบ)', () => {
+                openConfirmModal('warning', 'ล้างหน้าตรวจสอบ?', 'คุณกำลังจะล้างข้อมูลที่กรอกไว้ในหน้าตรวจสอบทั้งหมด', () => {
                     document.querySelectorAll('#page-verify .num-input').forEach(i => i.value = '');
                     validateAll();
                     showToast("🧹 ล้างหน้าตรวจสอบเรียบร้อย");
                 });
             } else {
-                openConfirmModal('danger', 'รีเซ็ตยอดสะสมใน Cloud?', 'ระวัง! ข้อมูลสรุปผลสะสมทั้งหมดที่เคยบันทึกไว้ใน Google Sheet จะถูกลบทิ้งถาวร ไม่สามารถกู้คืนได้', async () => {
-            try {
-                showToast("⏳ กำลังล้างข้อมูลใน Cloud...");
-                const response = await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: "clear_all" }) // ส่งคำสั่งล้างข้อมูล
+                openConfirmModal('danger', 'รีเซ็ตยอดสะสมใน Cloud?', 'ระวัง! ข้อมูลสรุปผลสะสมทั้งหมดใน Cloud จะถูกลบทิ้งถาวร', async () => {
+                    try {
+                        showToast("⏳ กำลังล้างข้อมูลใน Cloud...");
+                        const response = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "clear_all" }) });
+                        const result = await response.json();
+                        if (result.status === "success") {
+                            document.querySelectorAll('#page-cumulative .num-input-cum').forEach(i => i.value = '');
+                            saveCounter = 0; savedHistory = []; 
+                            document.getElementById('save-count-badge').innerText = "0 รอบ";
+                            calculateCumulativeTotals();
+                            showToast("💥 ล้างข้อมูลสำเร็จ!");
+                        }
+                    } catch (error) { showToast("❌ ล้างข้อมูลไม่สำเร็จ"); }
                 });
-                const result = await response.json();
-
-                if (result.status === "success") {
-                    // ล้างตัวเลขในหน้าจอ
-                    document.querySelectorAll('#page-cumulative .num-input-cum').forEach(i => i.value = '');
-                    saveCounter = 0;
-                    savedHistory = []; 
-                    document.getElementById('save-count-badge').innerText = "0 รอบ";
-                    calculateCumulativeTotals();
-                    showToast("💥 ล้างข้อมูลใน Cloud และรีเซ็ตหน้าจอสำเร็จ!");
-                }
-            } catch (error) {
-                console.error("Clear Cloud Error:", error);
-                showToast("❌ ล้างข้อมูลไม่สำเร็จ");
             }
-        });
-    }
-}
+        }
 
         function switchTab(t) {
             currentTab = t;
@@ -472,24 +392,18 @@ function getTableDataArray(tableId) {
             document.getElementById(`tab-${t}`).classList.add('active');
             document.getElementById(`page-${t}`).classList.remove('hidden');
             const saveControls = document.getElementById('verify-controls');
-            if(t === 'verify') {
-                saveControls.classList.remove('hidden');
-                validateAll();
-            } else {
-                saveControls.classList.add('hidden');
-                fetchCloudData(); // <--- เพิ่มบรรทัดนี้เพื่อดึงข้อมูลจาก Cloud เมื่อกดมาหน้า 2
-            }
+            if(t === 'verify') { saveControls.classList.remove('hidden'); validateAll(); }
+            else { saveControls.classList.add('hidden'); fetchCloudData(); }
         }
 
         function createSummaryTable(containerId, isCum = false) {
             const container = document.getElementById(containerId);
             const tid = `summary-table${isCum ? '-cum' : ''}`;
             const inputClass = isCum ? 'num-input-cum' : 'num-input';
-            const tableClass = isCum ? 'cum-table-style' : '';
             const div = document.createElement('div');
             div.className = 'table-container';
             div.innerHTML = `
-                <table id="${tid}" class="${tableClass}">
+                <table id="${tid}" class="${isCum ? 'cum-table-style' : ''}">
                     <thead>
                         <tr><th colspan="8">
                             <div class="table-main-title">
@@ -512,24 +426,17 @@ function getTableDataArray(tableId) {
             const div = document.createElement('div');
             div.className = 'table-container dynamic-table-root';
             const tid = `${id}-table${isCum ? '-cum' : ''}`;
-            const inputClass = isCum ? 'num-input-cum' : 'num-input';
-            const tableClass = isCum ? 'cum-table-style' : '';
             div.innerHTML = `
-                <table id="${tid}" class="${tableClass}">
+                <table id="${tid}" class="${isCum ? 'cum-table-style' : ''}">
                     <thead>
-                        <tr><th colspan="23">
-                            <div class="table-main-title">
-                                <span>${title}${isCum ? ' (ยอดสะสม)' : ''}</span>
-                                ${!isCum ? `<button class="btn-clear-table no-print ml-4" onclick="clearSpecificTable('${tid}')">ล้างตารางนี้</button>` : `<button class="btn-copy-table no-print ml-4" onclick="copyTableValues('${tid}')">คัดลอกเฉพาะตัวเลข</button>`}
-                            </div>
-                        </th></tr>
+                        <tr><th colspan="23"><div class="table-main-title"><span>${title}${isCum ? ' (ยอดสะสม)' : ''}</span>${!isCum ? `<button class="btn-clear-table no-print ml-4" onclick="clearSpecificTable('${tid}')">ล้างตารางนี้</button>` : `<button class="btn-copy-table no-print ml-4" onclick="copyTableValues('${tid}')">คัดลอกเฉพาะตัวเลข</button>`}</div></th></tr>
                         <tr class="bg-gray-100"><th rowspan="3" style="width:140px">ช่องทางการชำระ</th><th colspan="14">สมาชิก</th><th colspan="6">ไม่ใช่สมาชิก</th><th rowspan="3">จำนวนรายการทั้งหมด</th><th rowspan="3">ยอดเงินรวมทั้งหมด (บาท)</th></tr>
                         <tr><th colspan="4">บุคคลไทย</th><th colspan="4">ต่างชาติ</th><th colspan="4">นิติบุคคล</th><th rowspan="2">รวมรายการสมาชิก</th><th rowspan="2">รวมเงินสมาชิก</th><th colspan="4">ไม่ใช่สมาชิก</th><th rowspan="2">รวมรายการไม่ใช่สมาชิก</th><th rowspan="2">รวมเงินไม่ใช่สมาชิก</th></tr>
                         <tr>${Array(4).fill('<th>C1</th><th>C2</th><th>C3</th><th>C4</th>').join('')}</tr>
                     </thead>
                     <tbody>
-                        ${chs.map(ch => `<tr><td class="row-label">${ch}</td>${Array(22).fill(0).map((_, i) => `<td><input type="text" class="${inputClass}" placeholder="${[13,19,21].includes(i)?'0.00':'0'}">${!isCum ? '<span class="val-hint"></span>' : ''}</td>`).join('')}</tr>`).join('')}
-                        <tr class="total-row"><td class="row-label">ยอดรวม</td>${Array(22).fill(0).map((_, i) => `<td><input type="text" class="${inputClass}" placeholder="${[13,19,21].includes(i)?'0.00':'0'}">${!isCum ? '<span class="val-hint"></span>' : ''}</td>`).join('')}</tr>
+                        ${chs.map(ch => `<tr><td class="row-label">${ch}</td>${Array(22).fill(0).map((_, i) => `<td><input type="text" class="${isCum ? 'num-input-cum' : 'num-input'}" placeholder="${[13,19,21].includes(i)?'0.00':'0'}">${!isCum ? '<span class="val-hint"></span>' : ''}</td>`).join('')}</tr>`).join('')}
+                        <tr class="total-row"><td class="row-label">ยอดรวม</td>${Array(22).fill(0).map((_, i) => `<td><input type="text" class="${isCum ? 'num-input-cum' : 'num-input'}" placeholder="${[13,19,21].includes(i)?'0.00':'0'}">${!isCum ? '<span class="val-hint"></span>' : ''}</td>`).join('')}</tr>
                     </tbody>
                 </table>
             `;
@@ -538,8 +445,7 @@ function getTableDataArray(tableId) {
 
         function clearSpecificTable(tableId) {
             openConfirmModal('warning', 'ล้างข้อมูลตาราง?', 'คุณต้องการล้างข้อมูลในตารางที่เลือกนี้ใช่หรือไม่?', () => {
-                const table = document.getElementById(tableId);
-                table.querySelectorAll('input.num-input').forEach(input => input.value = '');
+                document.getElementById(tableId).querySelectorAll('input.num-input').forEach(input => input.value = '');
                 validateAll();
             });
         }
@@ -547,32 +453,26 @@ function getTableDataArray(tableId) {
         function validateAll() {
             if (currentTab !== 'verify') return;
             hasValidationErrors = false;
-            let total_C1C4_Member_AllTables = 0, total_C1C4_NonMember_AllTables = 0, global_MemberMoney = 0, global_NonMemberMoney = 0;
+            let mQty = 0, nmQty = 0, mMoney = 0, nmMoney = 0;
             ['success', 'failed', 'pending', 'processing'].forEach(id => {
                 const table = document.getElementById(`${id}-table`);
                 if (!table) return;
-                const rows = Array.from(table.querySelectorAll('tbody tr'));
                 let colSums = Array(22).fill(0);
-                rows.forEach((row, rIdx) => {
-                    const isTotalRow = row.classList.contains('total-row');
-                    const ins = row.querySelectorAll('.num-input');
-                    const v = Array.from(ins).map(i => unformatNumber(i.value));
-                    const calcMemberQty = (v[0]+v[1]+v[2]+v[3]) + (v[4]+v[5]+v[6]+v[7]) + (v[8]+v[9]+v[10]+v[11]);
-                    const calcMemberMoney = ((v[0]+v[4]+v[8])*30) + ((v[1]+v[5]+v[9])*50) + ((v[2]+v[6]+v[10])*70);
-                    const calcNonMemberQty = v[14]+v[15]+v[16]+v[17];
-                    const calcNonMemberMoney = (v[14]*30) + (v[15]*50) + (v[16]*70);
-                    if (!isTotalRow) {
-                        if(updateFieldStatus(ins[12], v[12], calcMemberQty)) hasValidationErrors = true;
-                        if(updateFieldStatus(ins[13], v[13], calcMemberMoney, true)) hasValidationErrors = true;
-                        if(updateFieldStatus(ins[18], v[18], calcNonMemberQty)) hasValidationErrors = true;
-                        if(updateFieldStatus(ins[19], v[19], calcNonMemberMoney, true)) hasValidationErrors = true;
-                        if(updateFieldStatus(ins[20], v[20], calcMemberQty + calcNonMemberQty)) hasValidationErrors = true;
-                        if(updateFieldStatus(ins[21], v[21], calcMemberMoney + calcNonMemberMoney, true)) hasValidationErrors = true;
+                table.querySelectorAll('tbody tr').forEach(row => {
+                    const ins = row.querySelectorAll('.num-input'), v = Array.from(ins).map(i => unformatNumber(i.value));
+                    const calcMQ = (v[0]+v[1]+v[2]+v[3])+(v[4]+v[5]+v[6]+v[7])+(v[8]+v[9]+v[10]+v[11]);
+                    const calcMM = ((v[0]+v[4]+v[8])*30)+((v[1]+v[5]+v[9])*50)+((v[2]+v[6]+v[10])*70);
+                    const calcNMQ = v[14]+v[15]+v[16]+v[17];
+                    const calcNMM = (v[14]*30)+(v[15]*50)+(v[16]*70);
+                    if (!row.classList.contains('total-row')) {
+                        if(updateFieldStatus(ins[12], v[12], calcMQ)) hasValidationErrors = true;
+                        if(updateFieldStatus(ins[13], v[13], calcMM, true)) hasValidationErrors = true;
+                        if(updateFieldStatus(ins[18], v[18], calcNMQ)) hasValidationErrors = true;
+                        if(updateFieldStatus(ins[19], v[19], calcNMM, true)) hasValidationErrors = true;
+                        if(updateFieldStatus(ins[20], v[20], calcMQ+calcNMQ)) hasValidationErrors = true;
+                        if(updateFieldStatus(ins[21], v[21], calcMM+calcNMM, true)) hasValidationErrors = true;
                         v.forEach((val, idx) => colSums[idx] += val);
-                        total_C1C4_Member_AllTables += calcMemberQty;
-                        total_C1C4_NonMember_AllTables += calcNonMemberQty;
-                        global_MemberMoney += calcMemberMoney;
-                        global_NonMemberMoney += calcNonMemberMoney;
+                        mQty += calcMQ; nmQty += calcNMQ; mMoney += calcMM; nmMoney += calcNMM;
                     } else {
                         v.forEach((val, idx) => { if(updateFieldStatus(ins[idx], val, colSums[idx], [13,19,21].includes(idx))) hasValidationErrors = true; });
                     }
@@ -580,15 +480,15 @@ function getTableDataArray(tableId) {
             });
             const sRows = document.querySelectorAll('.summary-body-verify tr');
             if (sRows.length >= 3) {
-                const mInps = sRows[0].querySelectorAll('.num-input'), nmInps = sRows[1].querySelectorAll('.num-input'), tInps = sRows[2].querySelectorAll('.num-input');
-                const mV = Array.from(mInps).map(i => unformatNumber(i.value)), nmV = Array.from(nmInps).map(i => unformatNumber(i.value));
-                if(updateFieldStatus(mInps[0], mV[0], total_C1C4_Member_AllTables)) hasValidationErrors = true;
-                if(updateFieldStatus(nmInps[0], nmV[0], total_C1C4_NonMember_AllTables)) hasValidationErrors = true;
-                if(updateFieldStatus(mInps[2], mV[2], global_MemberMoney, true)) hasValidationErrors = true;
-                if(updateFieldStatus(nmInps[2], nmV[2], global_NonMemberMoney, true)) hasValidationErrors = true;
-                if(updateFieldStatus(mInps[7], mV[7], mV[2]+mV[3]+mV[4]+mV[5]+mV[6], true)) hasValidationErrors = true;
-                if(updateFieldStatus(nmInps[7], nmV[7], nmV[2]+nmV[3]+nmV[4]+nmV[5]+nmV[6], true)) hasValidationErrors = true;
-                for(let i=0; i<8; i++) { if(tInps[i]) if(updateFieldStatus(tInps[i], unformatNumber(tInps[i].value), mV[i] + nmV[i], [2,3,4,5,6,7].includes(i))) hasValidationErrors = true; }
+                const mI = sRows[0].querySelectorAll('.num-input'), nmI = sRows[1].querySelectorAll('.num-input'), tI = sRows[2].querySelectorAll('.num-input');
+                const mV = Array.from(mI).map(i => unformatNumber(i.value)), nmV = Array.from(nmI).map(i => unformatNumber(i.value));
+                if(updateFieldStatus(mI[0], mV[0], mQty)) hasValidationErrors = true;
+                if(updateFieldStatus(nmI[0], nmV[0], nmQty)) hasValidationErrors = true;
+                if(updateFieldStatus(mI[2], mV[2], mMoney, true)) hasValidationErrors = true;
+                if(updateFieldStatus(nmI[2], nmV[2], nmMoney, true)) hasValidationErrors = true;
+                if(updateFieldStatus(mI[7], mV[7], mV[2]+mV[3]+mV[4]+mV[5]+mV[6], true)) hasValidationErrors = true;
+                if(updateFieldStatus(nmI[7], nmV[7], nmV[2]+nmV[3]+nmV[4]+nmV[5]+nmV[6], true)) hasValidationErrors = true;
+                for(let i=0; i<8; i++) if(tI[i]) if(updateFieldStatus(tI[i], unformatNumber(tI[i].value), mV[i]+nmV[i], [2,3,4,5,6,7].includes(i))) hasValidationErrors = true;
             }
             document.getElementById('error-status-msg').classList.toggle('hidden', !hasValidationErrors);
         }
@@ -597,18 +497,15 @@ function getTableDataArray(tableId) {
             ['success', 'failed', 'pending', 'processing'].forEach(id => {
                 const table = document.getElementById(`${id}-table-cum`);
                 if (!table) return;
-                const rows = Array.from(table.querySelectorAll('tbody tr:not(.total-row)')), totalRowInps = table.querySelectorAll('.total-row .num-input-cum');
+                const rows = table.querySelectorAll('tbody tr:not(.total-row)'), tRowI = table.querySelectorAll('.total-row .num-input-cum');
                 let colSums = Array(22).fill(0);
-                rows.forEach(row => {
-                    const v = Array.from(row.querySelectorAll('.num-input-cum')).map(i => unformatNumber(i.value));
-                    v.forEach((val, idx) => colSums[idx] += val);
-                });
-                colSums.forEach((sum, idx) => { if (totalRowInps[idx]) totalRowInps[idx].value = formatNumber(sum, [13,19,21].includes(idx) ? 2 : 0); });
+                rows.forEach(row => Array.from(row.querySelectorAll('.num-input-cum')).forEach((i, idx) => colSums[idx] += unformatNumber(i.value)));
+                colSums.forEach((sum, idx) => { if (tRowI[idx]) tRowI[idx].value = formatNumber(sum, [13,19,21].includes(idx) ? 2 : 0); });
             });
-            const sInpsRows = document.querySelectorAll('.summary-body-cum tr');
-            if (sInpsRows.length >= 3) {
-                const mInps = sInpsRows[0].querySelectorAll('.num-input-cum'), nmInps = sInpsRows[1].querySelectorAll('.num-input-cum'), totalInps = sInpsRows[2].querySelectorAll('.num-input-cum');
-                for(let i=0; i<8; i++) { if (mInps[i] && nmInps[i] && totalInps[i]) totalInps[i].value = formatNumber(unformatNumber(mInps[i].value) + unformatNumber(nmInps[i].value), [2,3,4,5,6,7].includes(i) ? 2 : 0); }
+            const sRows = document.querySelectorAll('.summary-body-cum tr');
+            if (sRows.length >= 3) {
+                const mI = sRows[0].querySelectorAll('.num-input-cum'), nmI = sRows[1].querySelectorAll('.num-input-cum'), tI = sRows[2].querySelectorAll('.num-input-cum');
+                for(let i=0; i<8; i++) if (mI[i] && nmI[i] && tI[i]) tI[i].value = formatNumber(unformatNumber(mI[i].value) + unformatNumber(nmI[i].value), [2,3,4,5,6,7].includes(i) ? 2 : 0);
             }
         }
 
@@ -616,92 +513,39 @@ function getTableDataArray(tableId) {
             if (!input) return false;
             const td = input.parentElement, hint = td.querySelector('.val-hint');
             if(!hint) return false;
-            td.classList.remove('status-correct', 'status-incorrect');
-            hint.innerText = "";
+            td.classList.remove('status-correct', 'status-incorrect'); hint.innerText = "";
             if (input.value.trim() === "") return false;
             hint.innerText = `(${formatNumber(targetValue, isMoney ? 2 : 0)})`;
-            const isCorrect = Math.abs(curValue - targetValue) < 0.01;
-            if (isCorrect) { td.classList.add('status-correct'); return false; } 
+            if (Math.abs(curValue - targetValue) < 0.01) { td.classList.add('status-correct'); return false; } 
             else { td.classList.add('status-incorrect'); return true; }
         }
 
         function handleSaveActionWithVerification() {
-            const allInputs = Array.from(document.querySelectorAll('#page-verify .num-input'));
-            const filledInputs = allInputs.filter(i => i.value.trim() !== "");
-            if (filledInputs.length === 0) {
-                openConfirmModal('danger', 'ไม่พบข้อมูล!', 'กรุณากรอกข้อมูลก่อนกดบันทึกยอดสะสม', () => {});
-                return;
-            }
-            if (hasValidationErrors) {
-                openConfirmModal('danger', 'ข้อมูลไม่ถูกต้อง!', 'โปรดแก้ไขข้อมูลในช่องสีแดงให้ถูกต้องตามตัวเลขในวงเล็บก่อนบันทึก', () => {});
-                return;
-            }
-            const currentFingerprint = allInputs.map(i => i.value.trim()).join('|');
-            const duplicateIndex = savedHistory.indexOf(currentFingerprint);
-            if (duplicateIndex !== -1) {
-                openConfirmModal('warning', 'ตรวจพบชุดข้อมูลซ้ำ!', `ชุดข้อมูลที่คุณกำลังจะบันทึก เหมือนกับข้อมูลรอบที่ ${duplicateIndex + 1} ทุกช่อง คุณยังต้องการบันทึกเพิ่มเข้าไปอีกใช่หรือไม่?`, () => {
-                    executeSave(currentFingerprint);
-                });
-                return;
-            }
-            openConfirmModal('info', 'ยืนยันการบันทึก?', 'คุณต้องการบันทึกชุดข้อมูลนี้และนำไปบวกเพิ่มในยอดสะสมใช่หรือไม่?', () => {
-                executeSave(currentFingerprint);
-            });
+            const allI = Array.from(document.querySelectorAll('#page-verify .num-input'));
+            if (allI.filter(i => i.value.trim() !== "").length === 0) { openConfirmModal('danger', 'ไม่พบข้อมูล!', 'กรุณากรอกข้อมูลก่อนบันทึก', () => {}); return; }
+            if (hasValidationErrors) { openConfirmModal('danger', 'ข้อมูลไม่ถูกต้อง!', 'โปรดแก้ไขช่องสีแดงก่อนบันทึก', () => {}); return; }
+            const fingerprint = allI.map(i => i.value.trim()).join('|');
+            if (savedHistory.indexOf(fingerprint) !== -1) { openConfirmModal('warning', 'ชุดข้อมูลซ้ำ!', 'ข้อมูลนี้เหมือนกับรอบที่เคยบันทึกไว้ ยืนยันบันทึกซ้ำหรือไม่?', () => executeSave(fingerprint)); return; }
+            openConfirmModal('info', 'ยืนยันบันทึก?', 'คุณต้องการบันทึกข้อมูลและบวกเพิ่มยอดสะสมใช่หรือไม่?', () => executeSave(fingerprint));
         }
 
-async function executeSave(fingerprint) {
-            // 1. เตรียมข้อมูลให้ตรงกับ Google Sheet (Timestamp จะถูกเติมที่ฝั่ง Script)
-            const dataToSave = {
-                staff_name: "พนักงาน_R11", // ตรงนี้สามารถเปลี่ยนเป็นชื่อคนคีย์ได้
-                payload: {
-                    summary: getSummaryDataArray(),
-                    tables: {
-                        success: getTableDataArray('success-table'),
-                        failed: getTableDataArray('failed-table'),
-                        pending: getTableDataArray('pending-table'),
-                        processing: getTableDataArray('processing-table')
-                    }
-                }
-            };
-
+        async function executeSave(fingerprint) {
+            const dataToSave = { staff_name: "พนักงาน_R11", payload: { summary: getSummaryDataArray(), tables: { success: getTableDataArray('success-table'), failed: getTableDataArray('failed-table'), pending: getTableDataArray('pending-table'), processing: getTableDataArray('processing-table') } } };
             try {
                 showToast("⏳ กำลังบันทึกไปยัง Cloud...");
-                
-                // 2. ส่งข้อมูลไปยัง SCRIPT_URL
-                await fetch(SCRIPT_URL, { 
-                    method: 'POST', 
-                    body: JSON.stringify(dataToSave) 
-                });
-
-                // 3. เมื่อบันทึกสำเร็จ ให้ล้างข้อมูลหน้าแรกเพื่อรอคีย์รอบใหม่
-                saveCounter++;
-                savedHistory.push(fingerprint);
+                await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(dataToSave) });
+                saveCounter++; savedHistory.push(fingerprint);
                 document.getElementById('save-count-badge').innerText = `${saveCounter} รอบ`;
-                
                 document.querySelectorAll('#page-verify .num-input').forEach(i => i.value = '');
-                validateAll();
-                
-                // 4. ดึงยอดรวมล่าสุดจาก Cloud (ที่รวมของทุกคนแล้ว) มาโชว์ในหน้าสะสมทันที
-                await fetchCloudData(); 
-                
-                showToast(`✅ บันทึกรอบที่ ${saveCounter} และรวมยอดสำเร็จ!`);
-            } catch (error) {
-                console.error("Cloud Error:", error);
-                showToast("❌ บันทึกล้มเหลว: โปรดตรวจสอบการเชื่อมต่อ");
-            }
+                validateAll(); await fetchCloudData(); 
+                showToast(`✅ บันทึกรอบที่ ${saveCounter} สำเร็จ!`);
+            } catch (error) { showToast("❌ บันทึกล้มเหลว"); }
         }
-        function showToast(m) {
-            const t = document.getElementById("toast"); t.innerText = m; t.className = "show";
-            setTimeout(() => t.className = "", 3000);
-        }
+
+        function showToast(m) { const t = document.getElementById("toast"); t.innerText = m; t.className = "show"; setTimeout(() => t.className = "", 3000); }
 
         document.body.addEventListener('input', e => { if(e.target.classList.contains('num-input')) validateAll(); });
-        document.body.addEventListener('focusout', e => {
-            if(e.target.tagName === 'INPUT') {
-                const v = unformatNumber(e.target.value);
-                if(e.target.value.trim() !== "") e.target.value = formatNumber(v, e.target.placeholder.includes('.00') ? 2 : 0);
-            }
-        });
+        document.body.addEventListener('focusout', e => { if(e.target.tagName === 'INPUT') { const v = unformatNumber(e.target.value); if(e.target.value.trim() !== "") e.target.value = formatNumber(v, e.target.placeholder.includes('.00') ? 2 : 0); } });
         document.body.addEventListener('paste', handleSmartPaste);
 
         window.onload = () => {
@@ -713,24 +557,30 @@ async function executeSave(fingerprint) {
                 { title: "ตารางที่ 4: รอดำเนินการชำระ (รายการ)", id: "pending", chs: CHANNELS_TABLE4 },
                 { title: "ตารางที่ 5: ระหว่างดำเนินการชำระ", id: "processing", chs: CHANNELS_TABLE5 }
             ];
-            cfgs.forEach(c => {
-                createTable(c.title, c.id, c.chs, 'dynamic-tables-verify', false);
-                createTable(c.title, c.id, c.chs, 'dynamic-tables-cum', true);
-            });
+            cfgs.forEach(c => { createTable(c.title, c.id, c.chs, 'dynamic-tables-verify', false); createTable(c.title, c.id, c.chs, 'dynamic-tables-cum', true); });
+            
             setTimeout(() => { validateAll(); calculateCumulativeTotals(); }, 100);
-// --- เพิ่มส่วนนี้เข้าไปครับ ---
-    // สั่งให้ดึงข้อมูลจาก Cloud มาแสดงครั้งแรกทันทีที่เปิดหน้าเว็บ
-    fetchCloudData(); 
+            fetchCloudData(); 
 
-    // ตั้งเวลาให้ตรวจสอบข้อมูลใหม่จาก Cloud ทุกๆ 60 วินาที
-    setInterval(() => {
-        // จะดึงข้อมูลอัตโนมัติเฉพาะเมื่อผู้ใช้งานเปิดอยู่ที่หน้า "สรุปรายงานสะสม" (Cumulative)
-        if (typeof currentTab !== 'undefined' && currentTab === 'cumulative') {
-            fetchCloudData();
-        }
-    }, 20000); 
-    // -------------------------
-
+            // ระบบนับถอยหลัง Sync ข้อมูลทุก 20 วินาที
+            setInterval(() => {
+                const timerBadge = document.getElementById('sync-timer-badge');
+                if (syncTimeLeft <= 0) {
+                    if (currentTab === 'cumulative') {
+                        timerBadge.innerText = "Syncing";
+                        timerBadge.classList.replace('text-blue-600', 'text-red-600');
+                        fetchCloudData().then(() => {
+                            setTimeout(() => {
+                                timerBadge.classList.replace('text-red-600', 'text-blue-600');
+                            }, 1500);
+                        });
+                    }
+                    syncTimeLeft = 20;
+                } else {
+                    syncTimeLeft--;
+                }
+                if (timerBadge && syncTimeLeft > 0) timerBadge.innerText = syncTimeLeft + "s";
+            }, 1000);
         };
     </script>
 </body>
