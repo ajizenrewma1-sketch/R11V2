@@ -125,8 +125,27 @@
         @media print { .no-print { display: none !important; } }
     </style>
 </head>
+
 <body class="p-4 bg-slate-50">
 
+    <div id="login-screen" class="fixed inset-0 z-[5000] bg-slate-100 flex items-center justify-center">
+    <div class="bg-white p-10 rounded-3xl shadow-2xl w-full max-w-md text-center border border-gray-100">
+        <h1 class="text-4xl font-black text-blue-900 mb-6">M-Flow R11</h1>
+        <div class="mb-8 text-left">
+            <label class="block text-sm font-bold text-gray-700 mb-2 ml-1">เลือกชื่อผู้ตรวจสอบ:</label>
+            <select id="user-session" class="w-full p-4 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:border-blue-500 outline-none text-lg font-semibold">
+                <option value="" disabled selected>-- เลือกรายชื่อ --</option>
+                <option value="ซินดี้">ซินดี้</option>
+                <option value="แม่โย">แม่โย</option>
+                <option value="แม่มายด์">แม่มายด์</option>
+                <option value="ทีมช่วย">ทีมช่วย</option>
+            </select>
+        </div>
+        <button onclick="startSession()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl text-xl shadow-lg transition-all active:scale-95">
+            เข้าสู่ระบบ
+        </button>
+    </div>
+</div>
     <div id="toast">บันทึกสำเร็จ!</div>
 
     <div id="confirm-modal" class="modal-overlay">
@@ -212,376 +231,425 @@
         </div>
     </div>
 
-    <script>
-        const CHANNELS_GENERAL = ["Counter Service", "Mobile Banking", "บัญชีบัตร Easy Pass", "บัญชีบัตร M-PASS", "บัญชีออมทรัพย์", "บัตรเครดิต/เดบิต"];
-        const CHANNELS_TABLE3 = ["บัญชีบัตร Easy Pass", "บัญชีบัตร M-PASS", "บัญชีออมทรัพย์", "บัตรเครดิต/เดบิต"];
-        const CHANNELS_TABLE4 = ["บัญชีบัตร Easy Pass", "บัญชีออมทรัพย์", "บัตรเครดิต/เดบิต", "ยังไม่ระบุช่องทาง", "รายการโต้แย้งที่ไม่ได้ระบุช่องทาง"];
-        const CHANNELS_TABLE5 = ["บัญชีบัตร Easy Pass", "บัญชีบัตร M-PASS", "บัญชีออมทรัพย์", "บัตรเครดิต/เดบิต"];
+<script>
+    // --- 1. GLOBAL VARIABLES & CONFIG ---
+    let currentUser = ""; 
+    let currentTab = 'verify';
+    let saveCounter = 0;
+    let hasValidationErrors = false;
+    let savedHistory = []; 
+    let syncTimeLeft = 20;
 
-        let currentTab = 'verify';
-        let saveCounter = 0;
-        let hasValidationErrors = false;
-        let savedHistory = []; 
-        let syncTimeLeft = 20;
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyF4gpfPD7-Ket7HPKNLjtX6TxPQewKmFwMkd9GZe0xPuM4aKjLqDmu4afawB2Lz4IK/exec"; 
+    const CHANNELS_GENERAL = ["Counter Service", "Mobile Banking", "บัญชีบัตร Easy Pass", "บัญชีบัตร M-PASS", "บัญชีออมทรัพย์", "บัตรเครดิต/เดบิต"];
+    const CHANNELS_TABLE3 = ["บัญชีบัตร Easy Pass", "บัญชีบัตร M-PASS", "บัญชีออมทรัพย์", "บัตรเครดิต/เดบิต"];
+    const CHANNELS_TABLE4 = ["บัญชีบัตร Easy Pass", "บัญชีออมทรัพย์", "บัตรเครดิต/เดบิต", "ยังไม่ระบุช่องทาง", "รายการโต้แย้งที่ไม่ได้ระบุช่องทาง"];
+    const CHANNELS_TABLE5 = ["บัญชีบัตร Easy Pass", "บัญชีบัตร M-PASS", "บัญชีออมทรัพย์", "บัตรเครดิต/เดบิต"];
 
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyF4gpfPD7-Ket7HPKNLjtX6TxPQewKmFwMkd9GZe0xPuM4aKjLqDmu4afawB2Lz4IK/exec"; 
+    // --- 2. SESSION & LOGIN ---
+    function startSession() {
+        const select = document.getElementById('user-session');
+        const loginScreen = document.getElementById('login-screen');
+        if (!select.value) {
+            alert("กรุณาเลือกชื่อผู้ตรวจสอบก่อนเข้าสู่ระบบครับ");
+            return;
+        }
+        currentUser = select.value;
+        loginScreen.style.display = 'none'; 
+        showToast(`ยินดีต้อนรับคุณ ${currentUser}`);
+    }
 
-        async function fetchCloudData() {
-            try {
-                const response = await fetch(SCRIPT_URL);
-                const cloudData = await response.json();
-
-                if (!cloudData || !cloudData.summary || cloudData.summary.length === 0) {
-                    document.querySelectorAll('#page-cumulative .num-input-cum').forEach(input => {
-                        const isMoney = input.placeholder.includes('.00');
-                        input.value = formatNumber(0, isMoney ? 2 : 0);
-                    });
-                    document.getElementById('save-count-badge').innerText = "0 รอบ";
-                    return;
-                }
-
-                // อัปเดตตารางสรุป
-                const sCumBody = document.querySelector('.summary-body-cum');
-                if (sCumBody && cloudData.summary) {
-                    const rows = sCumBody.querySelectorAll('tr:not(.total-row)');
-                    cloudData.summary.forEach((rowData, rIdx) => {
-                        if (rows[rIdx]) {
-                            const inputs = rows[rIdx].querySelectorAll('.num-input-cum');
-                            rowData.forEach((val, iIdx) => {
-                                if (inputs[iIdx]) {
-                                    const isMoney = [2, 3, 4, 5, 6, 7].includes(iIdx);
-                                    inputs[iIdx].value = formatNumber(val, isMoney ? 2 : 0);
-                                }
-                            });
-                        }
-                    });
-                }
-
-                // อัปเดตตารางย่อย 2-5
-                const tableIds = ['success', 'failed', 'pending', 'processing'];
-                tableIds.forEach(id => {
-                    const table = document.getElementById(`${id}-table-cum`);
-                    if (table && cloudData.tables[id]) {
-                        const allInputs = table.querySelectorAll('tbody tr:not(.total-row) .num-input-cum');
-                        const dataArray = cloudData.tables[id];
-                        allInputs.forEach((input, idx) => {
-                            if (dataArray[idx] !== undefined) {
-                                const isMoney = input.placeholder.includes('.00');
-                                input.value = formatNumber(dataArray[idx], isMoney ? 2 : 0);
+    // --- 3. CLOUD SYNC & DATA FETCH ---
+    async function fetchCloudData() {
+        try {
+            const response = await fetch(SCRIPT_URL);
+            const cloudData = await response.json();
+            if (!cloudData || !cloudData.summary || cloudData.summary.length === 0) {
+                document.querySelectorAll('#page-cumulative .num-input-cum').forEach(input => {
+                    const isMoney = input.placeholder.includes('.00');
+                    input.value = formatNumber(0, isMoney ? 2 : 0);
+                });
+                document.getElementById('save-count-badge').innerText = "0 รอบ";
+                return;
+            }
+            // อัปเดตตารางสรุป
+            const sCumBody = document.querySelector('.summary-body-cum');
+            if (sCumBody && cloudData.summary) {
+                const rows = sCumBody.querySelectorAll('tr:not(.total-row)');
+                cloudData.summary.forEach((rowData, rIdx) => {
+                    if (rows[rIdx]) {
+                        const inputs = rows[rIdx].querySelectorAll('.num-input-cum');
+                        rowData.forEach((val, iIdx) => {
+                            if (inputs[iIdx]) {
+                                const isMoney = [2, 3, 4, 5, 6, 7].includes(iIdx);
+                                inputs[iIdx].value = formatNumber(val, isMoney ? 2 : 0);
                             }
                         });
                     }
                 });
-
-                calculateCumulativeTotals();
-                // (ลบ showToast ออกเพื่อให้เงียบตามคำขอ)
-            } catch (e) {
-                console.error("Cloud Fetch Error:", e);
             }
-        }
-
-        function getSummaryDataArray() {
-            const rows = document.querySelectorAll('.summary-body-verify tr:not(.total-row)');
-            return Array.from(rows).map(row => 
-                Array.from(row.querySelectorAll('.num-input')).map(i => unformatNumber(i.value))
-            );
-        }
-
-        function getTableDataArray(tableId) {
-            const table = document.getElementById(tableId); 
-            if (!table) return [];
-            return Array.from(table.querySelectorAll('tbody tr:not(.total-row) .num-input'))
-                        .map(i => unformatNumber(i.value));
-        }
-
-        function formatNumber(n, d = 0) {
-            if (n === 0 && d === 0) return "0";
-            if (!n && n !== 0) return "";
-            return parseFloat(n).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
-        }
-
-        function unformatNumber(n) { 
-            if (typeof n === 'string') return parseFloat(n.replace(/,/g, "")) || 0;
-            return parseFloat(n) || 0;
-        }
-
-        function copyTableValues(tableId) {
-            const table = document.getElementById(tableId);
-            const rows = Array.from(table.querySelectorAll('tbody tr'));
-            let copyText = "";
-            rows.forEach((row, rowIndex) => {
-                const inputs = Array.from(row.querySelectorAll('input'));
-                const values = inputs.map(input => input.value || "0");
-                copyText += values.join("\t") + (rowIndex < rows.length - 1 ? "\n" : "");
-            });
-            const el = document.createElement('textarea');
-            el.value = copyText;
-            document.body.appendChild(el);
-            el.select();
-            document.execCommand('copy');
-            document.body.removeChild(el);
-            showToast("📋 คัดลอกข้อมูลตัวเลขแล้ว");
-        }
-
-        function handleSmartPaste(e) {
-            if (e.target.tagName !== 'INPUT' || !e.target.classList.contains('num-input')) return;
-            const pastedText = (e.clipboardData || window.clipboardData).getData('text');
-            let values = pastedText.split(/[\t\n\r]/).map(v => v.trim()).filter(v => v !== "");
-            if (values.length > 1) {
-                e.preventDefault();
-                const allInputs = Array.from(e.target.closest('table').querySelectorAll('.num-input'));
-                const startIndex = allInputs.indexOf(e.target);
-                let valueIdx = 0;
-                for (let i = startIndex; i < allInputs.length && valueIdx < values.length; i++) {
-                    const input = allInputs[i];
-                    input.value = formatNumber(unformatNumber(values[valueIdx]), input.placeholder.includes('.00') ? 2 : 0);
-                    valueIdx++;
-                }
-                validateAll();
-                showToast(`✅ วางข้อมูลสำเร็จ ${values.length} ช่อง`);
-            }
-        }
-
-        function openConfirmModal(type, title, desc, onConfirm) {
-            const modal = document.getElementById('confirm-modal');
-            const iconBox = document.getElementById('modal-icon-box');
-            const iconPath = document.getElementById('icon-path');
-            const confirmBtn = document.getElementById('modal-confirm-btn');
-            document.getElementById('modal-title').innerText = title;
-            document.getElementById('modal-desc').innerText = desc;
-            iconBox.className = "modal-icon-container " + (type === 'danger' ? 'icon-danger' : (type === 'info' ? 'icon-info' : 'icon-warning'));
-            confirmBtn.className = "flex-1 px-6 py-3 text-white rounded-xl font-bold shadow-lg transition active:scale-95 " + (type === 'danger' ? 'bg-red-500 hover:bg-red-600' : (type === 'info' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-orange-500 hover:bg-orange-600'));
-            if(type === 'danger') iconPath.setAttribute('d', 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z');
-            else if (type === 'info') iconPath.setAttribute('d', 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z');
-            else iconPath.setAttribute('d', 'M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z');
-            confirmBtn.onclick = () => { onConfirm(); closeConfirmModal(); };
-            modal.classList.add('active');
-        }
-
-        function closeConfirmModal() { document.getElementById('confirm-modal').classList.remove('active'); }
-
-        function handleClearCurrentPage() {
-            if (currentTab === 'verify') {
-                openConfirmModal('warning', 'ล้างหน้าตรวจสอบ?', 'คุณกำลังจะล้างข้อมูลที่กรอกไว้ในหน้าตรวจสอบทั้งหมด', () => {
-                    document.querySelectorAll('#page-verify .num-input').forEach(i => i.value = '');
-                    validateAll();
-                    showToast("🧹 ล้างหน้าตรวจสอบเรียบร้อย");
-                });
-            } else {
-                openConfirmModal('danger', 'รีเซ็ตยอดสะสมใน Cloud?', 'ระวัง! ข้อมูลสรุปผลสะสมทั้งหมดใน Cloud จะถูกลบทิ้งถาวร', async () => {
-                    try {
-                        showToast("⏳ กำลังล้างข้อมูลใน Cloud...");
-                        const response = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "clear_all" }) });
-                        const result = await response.json();
-                        if (result.status === "success") {
-                            document.querySelectorAll('#page-cumulative .num-input-cum').forEach(i => i.value = '');
-                            saveCounter = 0; savedHistory = []; 
-                            document.getElementById('save-count-badge').innerText = "0 รอบ";
-                            calculateCumulativeTotals();
-                            showToast("💥 ล้างข้อมูลสำเร็จ!");
-                        }
-                    } catch (error) { showToast("❌ ล้างข้อมูลไม่สำเร็จ"); }
-                });
-            }
-        }
-
-        function switchTab(t) {
-            currentTab = t;
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
-            document.getElementById(`tab-${t}`).classList.add('active');
-            document.getElementById(`page-${t}`).classList.remove('hidden');
-            const saveControls = document.getElementById('verify-controls');
-            if(t === 'verify') { saveControls.classList.remove('hidden'); validateAll(); }
-            else { saveControls.classList.add('hidden'); fetchCloudData(); }
-        }
-
-        function createSummaryTable(containerId, isCum = false) {
-            const container = document.getElementById(containerId);
-            const tid = `summary-table${isCum ? '-cum' : ''}`;
-            const inputClass = isCum ? 'num-input-cum' : 'num-input';
-            const div = document.createElement('div');
-            div.className = 'table-container';
-            div.innerHTML = `
-                <table id="${tid}" class="${isCum ? 'cum-table-style' : ''}">
-                    <thead>
-                        <tr><th colspan="8">
-                            <div class="table-main-title">
-                                <span>ตารางที่ 1: สรุปภาพรวมรายรายการ ${isCum ? '(ยอดสะสม)' : ''}</span>
-                                ${!isCum ? `<button class="btn-clear-table no-print ml-4" onclick="clearSpecificTable('${tid}')">ล้างตารางนี้</button>` : `<button class="btn-copy-table no-print ml-4" onclick="copyTableValues('${tid}')">คัดลอกเฉพาะตัวเลข</button>`}
-                            </div>
-                        </th></tr>
-                        <tr><th style="width: 150px;">รายการ</th><th>จำนวนรายการ</th><th>จำนวนใบแจ้งหนี้</th><th>ค่าผ่านทาง</th><th>ค่าเสียหาย 2 เท่า</th><th>ค่าปรับ 10 เท่า</th><th>ค่าปรับ 200 บาท</th><th>ยอดเงินใบแจ้ง</th></tr>
-                    </thead>
-                    <tbody class="${isCum ? 'summary-body-cum' : 'summary-body-verify'}">
-                        ${['สมาชิก', 'ไม่ใช่สมาชิก'].map(label => `<tr><td class="row-label">${label}</td>${Array(7).fill(0).map((_, i) => `<td><input type="text" class="${inputClass}" placeholder="${[2,3,4,5,6].includes(i)?'0.00':'0'}">${!isCum ? '<span class="val-hint"></span>' : ''}</td>`).join('')}</tr>`).join('')}
-                        <tr class="total-row"><td class="row-label">รวม</td>${Array(7).fill(0).map((_, i) => `<td><input type="text" class="${inputClass}" placeholder="${[2,3,4,5,6].includes(i)?'0.00':'0'}">${!isCum ? '<span class="val-hint"></span>' : ''}</td>`).join('')}</tr>
-                    </tbody>
-                </table>
-            `;
-            container.appendChild(div);
-        }
-
-        function createTable(title, id, chs, cont, isCum = false) {
-            const div = document.createElement('div');
-            div.className = 'table-container dynamic-table-root';
-            const tid = `${id}-table${isCum ? '-cum' : ''}`;
-            div.innerHTML = `
-                <table id="${tid}" class="${isCum ? 'cum-table-style' : ''}">
-                    <thead>
-                        <tr><th colspan="23"><div class="table-main-title"><span>${title}${isCum ? ' (ยอดสะสม)' : ''}</span>${!isCum ? `<button class="btn-clear-table no-print ml-4" onclick="clearSpecificTable('${tid}')">ล้างตารางนี้</button>` : `<button class="btn-copy-table no-print ml-4" onclick="copyTableValues('${tid}')">คัดลอกเฉพาะตัวเลข</button>`}</div></th></tr>
-                        <tr class="bg-gray-100"><th rowspan="3" style="width:140px">ช่องทางการชำระ</th><th colspan="14">สมาชิก</th><th colspan="6">ไม่ใช่สมาชิก</th><th rowspan="3">จำนวนรายการทั้งหมด</th><th rowspan="3">ยอดเงินรวมทั้งหมด (บาท)</th></tr>
-                        <tr><th colspan="4">บุคคลไทย</th><th colspan="4">ต่างชาติ</th><th colspan="4">นิติบุคคล</th><th rowspan="2">รวมรายการสมาชิก</th><th rowspan="2">รวมเงินสมาชิก</th><th colspan="4">ไม่ใช่สมาชิก</th><th rowspan="2">รวมรายการไม่ใช่สมาชิก</th><th rowspan="2">รวมเงินไม่ใช่สมาชิก</th></tr>
-                        <tr>${Array(4).fill('<th>C1</th><th>C2</th><th>C3</th><th>C4</th>').join('')}</tr>
-                    </thead>
-                    <tbody>
-                        ${chs.map(ch => `<tr><td class="row-label">${ch}</td>${Array(22).fill(0).map((_, i) => `<td><input type="text" class="${isCum ? 'num-input-cum' : 'num-input'}" placeholder="${[13,19,21].includes(i)?'0.00':'0'}">${!isCum ? '<span class="val-hint"></span>' : ''}</td>`).join('')}</tr>`).join('')}
-                        <tr class="total-row"><td class="row-label">ยอดรวม</td>${Array(22).fill(0).map((_, i) => `<td><input type="text" class="${isCum ? 'num-input-cum' : 'num-input'}" placeholder="${[13,19,21].includes(i)?'0.00':'0'}">${!isCum ? '<span class="val-hint"></span>' : ''}</td>`).join('')}</tr>
-                    </tbody>
-                </table>
-            `;
-            document.getElementById(cont).appendChild(div);
-        }
-
-        function clearSpecificTable(tableId) {
-            openConfirmModal('warning', 'ล้างข้อมูลตาราง?', 'คุณต้องการล้างข้อมูลในตารางที่เลือกนี้ใช่หรือไม่?', () => {
-                document.getElementById(tableId).querySelectorAll('input.num-input').forEach(input => input.value = '');
-                validateAll();
-            });
-        }
-
-        function validateAll() {
-            if (currentTab !== 'verify') return;
-            hasValidationErrors = false;
-            let mQty = 0, nmQty = 0, mMoney = 0, nmMoney = 0;
-            ['success', 'failed', 'pending', 'processing'].forEach(id => {
-                const table = document.getElementById(`${id}-table`);
-                if (!table) return;
-                let colSums = Array(22).fill(0);
-                table.querySelectorAll('tbody tr').forEach(row => {
-                    const ins = row.querySelectorAll('.num-input'), v = Array.from(ins).map(i => unformatNumber(i.value));
-                    const calcMQ = (v[0]+v[1]+v[2]+v[3])+(v[4]+v[5]+v[6]+v[7])+(v[8]+v[9]+v[10]+v[11]);
-                    const calcMM = ((v[0]+v[4]+v[8])*30)+((v[1]+v[5]+v[9])*50)+((v[2]+v[6]+v[10])*70);
-                    const calcNMQ = v[14]+v[15]+v[16]+v[17];
-                    const calcNMM = (v[14]*30)+(v[15]*50)+(v[16]*70);
-                    if (!row.classList.contains('total-row')) {
-                        if(updateFieldStatus(ins[12], v[12], calcMQ)) hasValidationErrors = true;
-                        if(updateFieldStatus(ins[13], v[13], calcMM, true)) hasValidationErrors = true;
-                        if(updateFieldStatus(ins[18], v[18], calcNMQ)) hasValidationErrors = true;
-                        if(updateFieldStatus(ins[19], v[19], calcNMM, true)) hasValidationErrors = true;
-                        if(updateFieldStatus(ins[20], v[20], calcMQ+calcNMQ)) hasValidationErrors = true;
-                        if(updateFieldStatus(ins[21], v[21], calcMM+calcNMM, true)) hasValidationErrors = true;
-                        v.forEach((val, idx) => colSums[idx] += val);
-                        mQty += calcMQ; nmQty += calcNMQ; mMoney += calcMM; nmMoney += calcNMM;
-                    } else {
-                        v.forEach((val, idx) => { if(updateFieldStatus(ins[idx], val, colSums[idx], [13,19,21].includes(idx))) hasValidationErrors = true; });
-                    }
-                });
-            });
-            const sRows = document.querySelectorAll('.summary-body-verify tr');
-            if (sRows.length >= 3) {
-                const mI = sRows[0].querySelectorAll('.num-input'), nmI = sRows[1].querySelectorAll('.num-input'), tI = sRows[2].querySelectorAll('.num-input');
-                const mV = Array.from(mI).map(i => unformatNumber(i.value)), nmV = Array.from(nmI).map(i => unformatNumber(i.value));
-                if(updateFieldStatus(mI[0], mV[0], mQty)) hasValidationErrors = true;
-                if(updateFieldStatus(nmI[0], nmV[0], nmQty)) hasValidationErrors = true;
-                if(updateFieldStatus(mI[2], mV[2], mMoney, true)) hasValidationErrors = true;
-                if(updateFieldStatus(nmI[2], nmV[2], nmMoney, true)) hasValidationErrors = true;
-                if(updateFieldStatus(mI[7], mV[7], mV[2]+mV[3]+mV[4]+mV[5]+mV[6], true)) hasValidationErrors = true;
-                if(updateFieldStatus(nmI[7], nmV[7], nmV[2]+nmV[3]+nmV[4]+nmV[5]+nmV[6], true)) hasValidationErrors = true;
-                for(let i=0; i<8; i++) if(tI[i]) if(updateFieldStatus(tI[i], unformatNumber(tI[i].value), mV[i]+nmV[i], [2,3,4,5,6,7].includes(i))) hasValidationErrors = true;
-            }
-            document.getElementById('error-status-msg').classList.toggle('hidden', !hasValidationErrors);
-        }
-
-        function calculateCumulativeTotals() {
-            ['success', 'failed', 'pending', 'processing'].forEach(id => {
+            // อัปเดตตารางย่อย 2-5
+            const tableIds = ['success', 'failed', 'pending', 'processing'];
+            tableIds.forEach(id => {
                 const table = document.getElementById(`${id}-table-cum`);
-                if (!table) return;
-                const rows = table.querySelectorAll('tbody tr:not(.total-row)'), tRowI = table.querySelectorAll('.total-row .num-input-cum');
-                let colSums = Array(22).fill(0);
-                rows.forEach(row => Array.from(row.querySelectorAll('.num-input-cum')).forEach((i, idx) => colSums[idx] += unformatNumber(i.value)));
-                colSums.forEach((sum, idx) => { if (tRowI[idx]) tRowI[idx].value = formatNumber(sum, [13,19,21].includes(idx) ? 2 : 0); });
+                if (table && cloudData.tables[id]) {
+                    const allInputs = table.querySelectorAll('tbody tr:not(.total-row) .num-input-cum');
+                    const dataArray = cloudData.tables[id];
+                    allInputs.forEach((input, idx) => {
+                        if (dataArray[idx] !== undefined) {
+                            const isMoney = input.placeholder.includes('.00');
+                            input.value = formatNumber(dataArray[idx], isMoney ? 2 : 0);
+                        }
+                    });
+                }
             });
-            const sRows = document.querySelectorAll('.summary-body-cum tr');
-            if (sRows.length >= 3) {
-                const mI = sRows[0].querySelectorAll('.num-input-cum'), nmI = sRows[1].querySelectorAll('.num-input-cum'), tI = sRows[2].querySelectorAll('.num-input-cum');
-                for(let i=0; i<8; i++) if (mI[i] && nmI[i] && tI[i]) tI[i].value = formatNumber(unformatNumber(mI[i].value) + unformatNumber(nmI[i].value), [2,3,4,5,6,7].includes(i) ? 2 : 0);
+            calculateCumulativeTotals();
+        } catch (e) { console.error("Cloud Fetch Error:", e); }
+    }
+
+    // --- 4. CORE SAVE LOGIC ---
+    async function executeSave(fingerprint) {
+        const dataToSave = {
+            staff_name: currentUser,
+            fingerprint: fingerprint,
+            payload: { 
+                summary: getSummaryDataArray(), 
+                tables: { 
+                    success: getTableDataArray('success-table'), 
+                    failed: getTableDataArray('failed-table'), 
+                    pending: getTableDataArray('pending-table'), 
+                    processing: getTableDataArray('processing-table') 
+                } 
+            } 
+        };
+
+        try {
+            showToast("⏳ กำลังบันทึกไปยัง Cloud...");
+            const response = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(dataToSave) });
+            const result = await response.json();
+
+            if (result.status === "duplicate") {
+                openConfirmModal('danger', 'พบข้อมูลซ้ำ!', 
+                    `ชุดข้อมูลนี้ถูกบันทึกไปแล้วโดยคุณ ${result.by_user} เมื่อเวลา ${result.at_time}`, 
+                    () => {}
+                );
+                return;
             }
-        }
 
-        function updateFieldStatus(input, curValue, targetValue, isMoney = false) {
-            if (!input) return false;
-            const td = input.parentElement, hint = td.querySelector('.val-hint');
-            if(!hint) return false;
-            td.classList.remove('status-correct', 'status-incorrect'); hint.innerText = "";
-            if (input.value.trim() === "") return false;
-            hint.innerText = `(${formatNumber(targetValue, isMoney ? 2 : 0)})`;
-            if (Math.abs(curValue - targetValue) < 0.01) { td.classList.add('status-correct'); return false; } 
-            else { td.classList.add('status-incorrect'); return true; }
-        }
-
-        function handleSaveActionWithVerification() {
-            const allI = Array.from(document.querySelectorAll('#page-verify .num-input'));
-            if (allI.filter(i => i.value.trim() !== "").length === 0) { openConfirmModal('danger', 'ไม่พบข้อมูล!', 'กรุณากรอกข้อมูลก่อนบันทึก', () => {}); return; }
-            if (hasValidationErrors) { openConfirmModal('danger', 'ข้อมูลไม่ถูกต้อง!', 'โปรดแก้ไขช่องสีแดงก่อนบันทึก', () => {}); return; }
-            const fingerprint = allI.map(i => i.value.trim()).join('|');
-            if (savedHistory.indexOf(fingerprint) !== -1) { openConfirmModal('warning', 'ชุดข้อมูลซ้ำ!', 'ข้อมูลนี้เหมือนกับรอบที่เคยบันทึกไว้ ยืนยันบันทึกซ้ำหรือไม่?', () => executeSave(fingerprint)); return; }
-            openConfirmModal('info', 'ยืนยันบันทึก?', 'คุณต้องการบันทึกข้อมูลและบวกเพิ่มยอดสะสมใช่หรือไม่?', () => executeSave(fingerprint));
-        }
-
-        async function executeSave(fingerprint) {
-            const dataToSave = { staff_name: "พนักงาน_R11", payload: { summary: getSummaryDataArray(), tables: { success: getTableDataArray('success-table'), failed: getTableDataArray('failed-table'), pending: getTableDataArray('pending-table'), processing: getTableDataArray('processing-table') } } };
-            try {
-                showToast("⏳ กำลังบันทึกไปยัง Cloud...");
-                await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(dataToSave) });
-                saveCounter++; savedHistory.push(fingerprint);
+            if (result.status === "success") {
+                saveCounter++; 
+                savedHistory.push(fingerprint);
                 document.getElementById('save-count-badge').innerText = `${saveCounter} รอบ`;
                 document.querySelectorAll('#page-verify .num-input').forEach(i => i.value = '');
-                validateAll(); await fetchCloudData(); 
+                validateAll(); 
+                await fetchCloudData(); 
                 showToast(`✅ บันทึกรอบที่ ${saveCounter} สำเร็จ!`);
-            } catch (error) { showToast("❌ บันทึกล้มเหลว"); }
+            }
+        } catch (error) { showToast("❌ การเชื่อมต่อ Cloud ล้มเหลว"); }
+    }
+
+    function handleSaveActionWithVerification() {
+        const allI = Array.from(document.querySelectorAll('#page-verify .num-input'));
+        if (allI.filter(i => i.value.trim() !== "").length === 0) { 
+            openConfirmModal('danger', 'ไม่พบข้อมูล!', 'กรุณากรอกข้อมูลก่อนบันทึก', () => {}); 
+            return; 
         }
+        if (hasValidationErrors) { 
+            openConfirmModal('danger', 'ข้อมูลไม่ถูกต้อง!', 'โปรดแก้ไขช่องสีแดงก่อนบันทึก', () => {}); 
+            return; 
+        }
+        const fingerprint = allI.map(i => i.value.trim()).join('|');
+        if (savedHistory.indexOf(fingerprint) !== -1) { 
+            openConfirmModal('warning', 'ชุดข้อมูลซ้ำ!', 'ข้อมูลนี้เหมือนกับรอบที่เคยบันทึกไว้ ยืนยันบันทึกซ้ำหรือไม่?', () => executeSave(fingerprint)); 
+            return; 
+        }
+        openConfirmModal('info', 'ยืนยันบันทึก?', 'คุณต้องการบันทึกข้อมูลและบวกเพิ่มยอดสะสมใช่หรือไม่?', () => executeSave(fingerprint));
+    }
 
-        function showToast(m) { const t = document.getElementById("toast"); t.innerText = m; t.className = "show"; setTimeout(() => t.className = "", 3000); }
+    // --- 5. HELPERS & UTILITIES ---
+    function getSummaryDataArray() {
+        const rows = document.querySelectorAll('.summary-body-verify tr:not(.total-row)');
+        return Array.from(rows).map(row => 
+            Array.from(row.querySelectorAll('.num-input')).map(i => unformatNumber(i.value))
+        );
+    }
 
-        document.body.addEventListener('input', e => { if(e.target.classList.contains('num-input')) validateAll(); });
-        document.body.addEventListener('focusout', e => { if(e.target.tagName === 'INPUT') { const v = unformatNumber(e.target.value); if(e.target.value.trim() !== "") e.target.value = formatNumber(v, e.target.placeholder.includes('.00') ? 2 : 0); } });
-        document.body.addEventListener('paste', handleSmartPaste);
+    function getTableDataArray(tableId) {
+        const table = document.getElementById(tableId); 
+        if (!table) return [];
+        return Array.from(table.querySelectorAll('tbody tr:not(.total-row) .num-input')).map(i => unformatNumber(i.value));
+    }
 
-        window.onload = () => {
-            createSummaryTable('summary-section-verify', false);
-            createSummaryTable('summary-section-cum', true);
-            const cfgs = [
-                { title: "ตารางที่ 2: ชำระสำเร็จ", id: "success", chs: CHANNELS_GENERAL },
-                { title: "ตารางที่ 3: ชำระไม่สำเร็จ", id: "failed", chs: CHANNELS_TABLE3 },
-                { title: "ตารางที่ 4: รอดำเนินการชำระ (รายการ)", id: "pending", chs: CHANNELS_TABLE4 },
-                { title: "ตารางที่ 5: ระหว่างดำเนินการชำระ", id: "processing", chs: CHANNELS_TABLE5 }
-            ];
-            cfgs.forEach(c => { createTable(c.title, c.id, c.chs, 'dynamic-tables-verify', false); createTable(c.title, c.id, c.chs, 'dynamic-tables-cum', true); });
-            
-            setTimeout(() => { validateAll(); calculateCumulativeTotals(); }, 100);
-            fetchCloudData(); 
+    function formatNumber(n, d = 0) {
+        if (n === 0 && d === 0) return "0";
+        if (!n && n !== 0) return "";
+        return parseFloat(n).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+    }
 
-            // ระบบนับถอยหลัง Sync ข้อมูลทุก 20 วินาที
-            setInterval(() => {
-                const timerBadge = document.getElementById('sync-timer-badge');
-                if (syncTimeLeft <= 0) {
-                    if (currentTab === 'cumulative') {
-                        timerBadge.innerText = "Syncing";
-                        timerBadge.classList.replace('text-blue-600', 'text-red-600');
-                        fetchCloudData().then(() => {
-                            setTimeout(() => {
-                                timerBadge.classList.replace('text-red-600', 'text-blue-600');
-                            }, 1500);
-                        });
+    function unformatNumber(n) { 
+        if (typeof n === 'string') return parseFloat(n.replace(/,/g, "")) || 0;
+        return parseFloat(n) || 0;
+    }
+
+    function copyTableValues(tableId) {
+        const table = document.getElementById(tableId);
+        const rows = Array.from(table.querySelectorAll('tbody tr'));
+        let copyText = "";
+        rows.forEach((row, rowIndex) => {
+            const inputs = Array.from(row.querySelectorAll('input'));
+            const values = inputs.map(input => input.value || "0");
+            copyText += values.join("\t") + (rowIndex < rows.length - 1 ? "\n" : "");
+        });
+        const el = document.createElement('textarea');
+        el.value = copyText;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+        showToast("📋 คัดลอกข้อมูลตัวเลขแล้ว");
+    }
+
+    function handleSmartPaste(e) {
+        if (e.target.tagName !== 'INPUT' || !e.target.classList.contains('num-input')) return;
+        const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+        let values = pastedText.split(/[\t\n\r]/).map(v => v.trim()).filter(v => v !== "");
+        if (values.length > 1) {
+            e.preventDefault();
+            const allInputs = Array.from(e.target.closest('table').querySelectorAll('.num-input'));
+            const startIndex = allInputs.indexOf(e.target);
+            let valueIdx = 0;
+            for (let i = startIndex; i < allInputs.length && valueIdx < values.length; i++) {
+                const input = allInputs[i];
+                input.value = formatNumber(unformatNumber(values[valueIdx]), input.placeholder.includes('.00') ? 2 : 0);
+                valueIdx++;
+            }
+            validateAll();
+            showToast(`✅ วางข้อมูลสำเร็จ ${values.length} ช่อง`);
+        }
+    }
+
+    function openConfirmModal(type, title, desc, onConfirm) {
+        const modal = document.getElementById('confirm-modal');
+        const iconBox = document.getElementById('modal-icon-box');
+        const iconPath = document.getElementById('icon-path');
+        const confirmBtn = document.getElementById('modal-confirm-btn');
+        document.getElementById('modal-title').innerText = title;
+        document.getElementById('modal-desc').innerText = desc;
+        iconBox.className = "modal-icon-container " + (type === 'danger' ? 'icon-danger' : (type === 'info' ? 'icon-info' : 'icon-warning'));
+        confirmBtn.className = "flex-1 px-6 py-3 text-white rounded-xl font-bold shadow-lg transition active:scale-95 " + (type === 'danger' ? 'bg-red-500 hover:bg-red-600' : (type === 'info' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-orange-500 hover:bg-orange-600'));
+        if(type === 'danger') iconPath.setAttribute('d', 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z');
+        else if (type === 'info') iconPath.setAttribute('d', 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z');
+        else iconPath.setAttribute('d', 'M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z');
+        confirmBtn.onclick = () => { onConfirm(); closeConfirmModal(); };
+        modal.classList.add('active');
+    }
+
+    function closeConfirmModal() { document.getElementById('confirm-modal').classList.remove('active'); }
+
+    function handleClearCurrentPage() {
+        if (currentTab === 'verify') {
+            openConfirmModal('warning', 'ล้างหน้าตรวจสอบ?', 'คุณกำลังจะล้างข้อมูลที่กรอกไว้ในหน้าตรวจสอบทั้งหมด', () => {
+                document.querySelectorAll('#page-verify .num-input').forEach(i => i.value = '');
+                validateAll();
+                showToast("🧹 ล้างหน้าตรวจสอบเรียบร้อย");
+            });
+        } else {
+            openConfirmModal('danger', 'รีเซ็ตยอดสะสมใน Cloud?', 'ระวัง! ข้อมูลสรุปผลสะสมทั้งหมดใน Cloud จะถูกลบทิ้งถาวร', async () => {
+                try {
+                    showToast("⏳ กำลังล้างข้อมูลใน Cloud...");
+                    const response = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "clear_all" }) });
+                    const result = await response.json();
+                    if (result.status === "success") {
+                        document.querySelectorAll('#page-cumulative .num-input-cum').forEach(i => i.value = '');
+                        saveCounter = 0; savedHistory = []; 
+                        document.getElementById('save-count-badge').innerText = "0 รอบ";
+                        calculateCumulativeTotals();
+                        showToast("💥 ล้างข้อมูลสำเร็จ!");
                     }
-                    syncTimeLeft = 20;
+                } catch (error) { showToast("❌ ล้างข้อมูลไม่สำเร็จ"); }
+            });
+        }
+    }
+
+    function switchTab(t) {
+        currentTab = t;
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+        document.getElementById(`tab-${t}`).classList.add('active');
+        document.getElementById(`page-${t}`).classList.remove('hidden');
+        const saveControls = document.getElementById('verify-controls');
+        if(t === 'verify') { saveControls.classList.remove('hidden'); validateAll(); }
+        else { saveControls.classList.add('hidden'); fetchCloudData(); }
+    }
+
+    // --- 6. TABLE GENERATION ---
+    function createSummaryTable(containerId, isCum = false) {
+        const container = document.getElementById(containerId);
+        const tid = `summary-table${isCum ? '-cum' : ''}`;
+        const inputClass = isCum ? 'num-input-cum' : 'num-input';
+        const div = document.createElement('div');
+        div.className = 'table-container';
+        div.innerHTML = `
+            <table id="${tid}" class="${isCum ? 'cum-table-style' : ''}">
+                <thead>
+                    <tr><th colspan="8">
+                        <div class="table-main-title">
+                            <span>ตารางที่ 1: สรุปภาพรวมรายรายการ ${isCum ? '(ยอดสะสม)' : ''}</span>
+                            ${!isCum ? `<button class="btn-clear-table no-print ml-4" onclick="clearSpecificTable('${tid}')">ล้างตารางนี้</button>` : `<button class="btn-copy-table no-print ml-4" onclick="copyTableValues('${tid}')">คัดลอกเฉพาะตัวเลข</button>`}
+                        </div>
+                    </th></tr>
+                    <tr><th style="width: 150px;">รายการ</th><th>จำนวนรายการ</th><th>จำนวนใบแจ้งหนี้</th><th>ค่าผ่านทาง</th><th>ค่าเสียหาย 2 เท่า</th><th>ค่าปรับ 10 เท่า</th><th>ค่าปรับ 200 บาท</th><th>ยอดเงินใบแจ้ง</th></tr>
+                </thead>
+                <tbody class="${isCum ? 'summary-body-cum' : 'summary-body-verify'}">
+                    ${['สมาชิก', 'ไม่ใช่สมาชิก'].map(label => `<tr><td class="row-label">${label}</td>${Array(7).fill(0).map((_, i) => `<td><input type="text" class="${inputClass}" placeholder="${[2,3,4,5,6].includes(i)?'0.00':'0'}">${!isCum ? '<span class="val-hint"></span>' : ''}</td>`).join('')}</tr>`).join('')}
+                    <tr class="total-row"><td class="row-label">รวม</td>${Array(7).fill(0).map((_, i) => `<td><input type="text" class="${inputClass}" placeholder="${[2,3,4,5,6].includes(i)?'0.00':'0'}">${!isCum ? '<span class="val-hint"></span>' : ''}</td>`).join('')}</tr>
+                </tbody>
+            </table>
+        `;
+        container.appendChild(div);
+    }
+
+    function createTable(title, id, chs, cont, isCum = false) {
+        const div = document.createElement('div');
+        div.className = 'table-container dynamic-table-root';
+        const tid = `${id}-table${isCum ? '-cum' : ''}`;
+        div.innerHTML = `
+            <table id="${tid}" class="${isCum ? 'cum-table-style' : ''}">
+                <thead>
+                    <tr><th colspan="23"><div class="table-main-title"><span>${title}${isCum ? ' (ยอดสะสม)' : ''}</span>${!isCum ? `<button class="btn-clear-table no-print ml-4" onclick="clearSpecificTable('${tid}')">ล้างตารางนี้</button>` : `<button class="btn-copy-table no-print ml-4" onclick="copyTableValues('${tid}')">คัดลอกเฉพาะตัวเลข</button>`}</div></th></tr>
+                    <tr class="bg-gray-100"><th rowspan="3" style="width:140px">ช่องทางการชำระ</th><th colspan="14">สมาชิก</th><th colspan="6">ไม่ใช่สมาชิก</th><th rowspan="3">จำนวนรายการทั้งหมด</th><th rowspan="3">ยอดเงินรวมทั้งหมด (บาท)</th></tr>
+                    <tr><th colspan="4">บุคคลไทย</th><th colspan="4">ต่างชาติ</th><th colspan="4">นิติบุคคล</th><th rowspan="2">รวมรายการสมาชิก</th><th rowspan="2">รวมเงินสมาชิก</th><th colspan="4">ไม่ใช่สมาชิก</th><th rowspan="2">รวมรายการไม่ใช่สมาชิก</th><th rowspan="2">รวมเงินไม่ใช่สมาชิก</th></tr>
+                    <tr>${Array(4).fill('<th>C1</th><th>C2</th><th>C3</th><th>C4</th>').join('')}</tr>
+                </thead>
+                <tbody>
+                    ${chs.map(ch => `<tr><td class="row-label">${ch}</td>${Array(22).fill(0).map((_, i) => `<td><input type="text" class="${isCum ? 'num-input-cum' : 'num-input'}" placeholder="${[13,19,21].includes(i)?'0.00':'0'}">${!isCum ? '<span class="val-hint"></span>' : ''}</td>`).join('')}</tr>`).join('')}
+                    <tr class="total-row"><td class="row-label">ยอดรวม</td>${Array(22).fill(0).map((_, i) => `<td><input type="text" class="${isCum ? 'num-input-cum' : 'num-input'}" placeholder="${[13,19,21].includes(i)?'0.00':'0'}">${!isCum ? '<span class="val-hint"></span>' : ''}</td>`).join('')}</tr>
+                </tbody>
+            </table>
+        `;
+        document.getElementById(cont).appendChild(div);
+    }
+
+    function clearSpecificTable(tableId) {
+        openConfirmModal('warning', 'ล้างข้อมูลตาราง?', 'คุณต้องการล้างข้อมูลในตารางที่เลือกนี้ใช่หรือไม่?', () => {
+            document.getElementById(tableId).querySelectorAll('input.num-input').forEach(input => input.value = '');
+            validateAll();
+        });
+    }
+
+    // --- 7. CALCULATION & VALIDATION ---
+    function validateAll() {
+        if (currentTab !== 'verify') return;
+        hasValidationErrors = false;
+        let mQty = 0, nmQty = 0, mMoney = 0, nmMoney = 0;
+        ['success', 'failed', 'pending', 'processing'].forEach(id => {
+            const table = document.getElementById(`${id}-table`);
+            if (!table) return;
+            let colSums = Array(22).fill(0);
+            table.querySelectorAll('tbody tr').forEach(row => {
+                const ins = row.querySelectorAll('.num-input'), v = Array.from(ins).map(i => unformatNumber(i.value));
+                const calcMQ = (v[0]+v[1]+v[2]+v[3])+(v[4]+v[5]+v[6]+v[7])+(v[8]+v[9]+v[10]+v[11]);
+                const calcMM = ((v[0]+v[4]+v[8])*30)+((v[1]+v[5]+v[9])*50)+((v[2]+v[6]+v[10])*70);
+                const calcNMQ = v[14]+v[15]+v[16]+v[17];
+                const calcNMM = (v[14]*30)+(v[15]*50)+(v[16]*70);
+                if (!row.classList.contains('total-row')) {
+                    if(updateFieldStatus(ins[12], v[12], calcMQ)) hasValidationErrors = true;
+                    if(updateFieldStatus(ins[13], v[13], calcMM, true)) hasValidationErrors = true;
+                    if(updateFieldStatus(ins[18], v[18], calcNMQ)) hasValidationErrors = true;
+                    if(updateFieldStatus(ins[19], v[19], calcNMM, true)) hasValidationErrors = true;
+                    if(updateFieldStatus(ins[20], v[20], calcMQ+calcNMQ)) hasValidationErrors = true;
+                    if(updateFieldStatus(ins[21], v[21], calcMM+calcNMM, true)) hasValidationErrors = true;
+                    v.forEach((val, idx) => colSums[idx] += val);
+                    mQty += calcMQ; nmQty += calcNMQ; mMoney += calcMM; nmMoney += calcNMM;
                 } else {
-                    syncTimeLeft--;
+                    v.forEach((val, idx) => { if(updateFieldStatus(ins[idx], val, colSums[idx], [13,19,21].includes(idx))) hasValidationErrors = true; });
                 }
-                if (timerBadge && syncTimeLeft > 0) timerBadge.innerText = syncTimeLeft + "s";
-            }, 1000);
-        };
-    </script>
+            });
+        });
+        const sRows = document.querySelectorAll('.summary-body-verify tr');
+        if (sRows.length >= 3) {
+            const mI = sRows[0].querySelectorAll('.num-input'), nmI = sRows[1].querySelectorAll('.num-input'), tI = sRows[2].querySelectorAll('.num-input');
+            const mV = Array.from(mI).map(i => unformatNumber(i.value)), nmV = Array.from(nmI).map(i => unformatNumber(i.value));
+            if(updateFieldStatus(mI[0], mV[0], mQty)) hasValidationErrors = true;
+            if(updateFieldStatus(nmI[0], nmV[0], nmQty)) hasValidationErrors = true;
+            if(updateFieldStatus(mI[2], mV[2], mMoney, true)) hasValidationErrors = true;
+            if(updateFieldStatus(nmI[2], nmV[2], nmMoney, true)) hasValidationErrors = true;
+            if(updateFieldStatus(mI[7], mV[7], mV[2]+mV[3]+mV[4]+mV[5]+mV[6], true)) hasValidationErrors = true;
+            if(updateFieldStatus(nmI[7], nmV[7], nmV[2]+nmV[3]+nmV[4]+nmV[5]+nmV[6], true)) hasValidationErrors = true;
+            for(let i=0; i<8; i++) if(tI[i]) if(updateFieldStatus(tI[i], unformatNumber(tI[i].value), mV[i]+nmV[i], [2,3,4,5,6,7].includes(i))) hasValidationErrors = true;
+        }
+        document.getElementById('error-status-msg').classList.toggle('hidden', !hasValidationErrors);
+    }
+
+    function calculateCumulativeTotals() {
+        ['success', 'failed', 'pending', 'processing'].forEach(id => {
+            const table = document.getElementById(`${id}-table-cum`);
+            if (!table) return;
+            const rows = table.querySelectorAll('tbody tr:not(.total-row)'), tRowI = table.querySelectorAll('.total-row .num-input-cum');
+            let colSums = Array(22).fill(0);
+            rows.forEach(row => Array.from(row.querySelectorAll('.num-input-cum')).forEach((i, idx) => colSums[idx] += unformatNumber(i.value)));
+            colSums.forEach((sum, idx) => { if (tRowI[idx]) tRowI[idx].value = formatNumber(sum, [13,19,21].includes(idx) ? 2 : 0); });
+        });
+        const sRows = document.querySelectorAll('.summary-body-cum tr');
+        if (sRows.length >= 3) {
+            const mI = sRows[0].querySelectorAll('.num-input-cum'), nmI = sRows[1].querySelectorAll('.num-input-cum'), tI = sRows[2].querySelectorAll('.num-input-cum');
+            for(let i=0; i<8; i++) if (mI[i] && nmI[i] && tI[i]) tI[i].value = formatNumber(unformatNumber(mI[i].value) + unformatNumber(nmI[i].value), [2,3,4,5,6,7].includes(i) ? 2 : 0);
+        }
+    }
+
+    function updateFieldStatus(input, curValue, targetValue, isMoney = false) {
+        if (!input) return false;
+        const td = input.parentElement, hint = td.querySelector('.val-hint');
+        if(!hint) return false;
+        td.classList.remove('status-correct', 'status-incorrect'); hint.innerText = "";
+        if (input.value.trim() === "") return false;
+        hint.innerText = `(${formatNumber(targetValue, isMoney ? 2 : 0)})`;
+        if (Math.abs(curValue - targetValue) < 0.01) { td.classList.add('status-correct'); return false; } 
+        else { td.classList.add('status-incorrect'); return true; }
+    }
+
+    function showToast(m) { const t = document.getElementById("toast"); t.innerText = m; t.className = "show"; setTimeout(() => t.className = "", 3000); }
+
+    // --- 8. EVENTS & INITIALIZATION ---
+    document.body.addEventListener('input', e => { if(e.target.classList.contains('num-input')) validateAll(); });
+    document.body.addEventListener('focusout', e => { 
+        if(e.target.tagName === 'INPUT') { 
+            const v = unformatNumber(e.target.value); 
+            if(e.target.value.trim() !== "") e.target.value = formatNumber(v, e.target.placeholder.includes('.00') ? 2 : 0); 
+        } 
+    });
+    document.body.addEventListener('paste', handleSmartPaste);
+
+    window.onload = () => {
+        createSummaryTable('summary-section-verify', false);
+        createSummaryTable('summary-section-cum', true);
+        const cfgs = [
+            { title: "ตารางที่ 2: ชำระสำเร็จ", id: "success", chs: CHANNELS_GENERAL },
+            { title: "ตารางที่ 3: ชำระไม่สำเร็จ", id: "failed", chs: CHANNELS_TABLE3 },
+            { title: "ตารางที่ 4: รอดำเนินการชำระ (รายการ)", id: "pending", chs: CHANNELS_TABLE4 },
+            { title: "ตารางที่ 5: ระหว่างดำเนินการชำระ", id: "processing", chs: CHANNELS_TABLE5 }
+        ];
+        cfgs.forEach(c => { createTable(c.title, c.id, c.chs, 'dynamic-tables-verify', false); createTable(c.title, c.id, c.chs, 'dynamic-tables-cum', true); });
+        
+        setTimeout(() => { validateAll(); calculateCumulativeTotals(); }, 100);
+        fetchCloudData(); 
+
+        setInterval(() => {
+            const timerBadge = document.getElementById('sync-timer-badge');
+            if (syncTimeLeft <= 0) {
+                if (currentTab === 'cumulative') {
+                    timerBadge.innerText = "Syncing";
+                    timerBadge.classList.replace('text-blue-600', 'text-red-600');
+                    fetchCloudData().then(() => {
+                        setTimeout(() => { timerBadge.classList.replace('text-red-600', 'text-blue-600'); }, 1500);
+                    });
+                }
+                syncTimeLeft = 20;
+            } else { syncTimeLeft--; }
+            if (timerBadge && syncTimeLeft > 0) timerBadge.innerText = syncTimeLeft + "s";
+        }, 1000);
+    };
+</script>    
+
 </body>
 </html>
