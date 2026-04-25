@@ -348,37 +348,63 @@
         } catch (error) { showToast("❌ การเชื่อมต่อ Cloud ล้มเหลว"); }
     }
 
-    function handleSaveActionWithVerification() {
-        const allI = Array.from(document.querySelectorAll('#page-verify .num-input'));
-        if (allI.filter(i => i.value.trim() !== "").length === 0) { 
-            openConfirmModal('danger', 'ไม่พบข้อมูล!', 'กรุณากรอกข้อมูลก่อนบันทึก', () => {}); 
+function handleSaveActionWithVerification() {
+        // ดึงข้อมูลแต่ละตารางแยกกันเพื่อตรวจสอบชื่อตาราง
+        const tables = [
+            { id: 'summary-table', name: 'ตารางที่ 1: สรุปภาพรวม' },
+            { id: 'success-table', name: 'ตารางที่ 2: ชำระสำเร็จ' },
+            { id: 'failed-table', name: 'ตารางที่ 3: ชำระไม่สำเร็จ' },
+            { id: 'pending-table', name: 'ตารางที่ 4: รอดำเนินการชำระ' },
+            { id: 'processing-table', name: 'ตารางที่ 5: ระหว่างดำเนินการชำระ' }
+        ];
+
+        let missingTables = [];
+        let allEmptyInputs = [];
+
+        // วนลูปเช็คทีละตาราง
+        tables.forEach(table => {
+            const inputs = Array.from(document.querySelectorAll(`#${table.id} .num-input`));
+            const hasEmpty = inputs.some(input => input.value.trim() === "");
+            if (hasEmpty) {
+                missingTables.push(table.name);
+                // เก็บ input ที่ว่างไว้ไฮไลท์สีเหลือง
+                inputs.filter(i => i.value.trim() === "").forEach(i => allEmptyInputs.push(i));
+            }
+        });
+
+        // --- เงื่อนไขแจ้งเตือนชื่อตาราง ---
+        if (missingTables.length > 0) {
+            openConfirmModal('danger', 'ข้อมูลไม่ครบถ้วน!', 
+                `กรุณากรอกข้อมูลให้ครบใน: \n${missingTables.join('\n')}`, 
+                () => {}
+            );
+
+            // ไฮไลท์ช่องที่ว่างเป็นสีเหลือง (ช่วยให้หาเจอง่ายขึ้น)
+            allEmptyInputs.forEach(input => {
+                input.style.backgroundColor = '#fef3c7';
+                setTimeout(() => { input.style.backgroundColor = ''; }, 3000);
+            });
             return; 
         }
+        // -----------------------------
+
+        // เช็ค Error ตัวเลข (ตัวหนังสือสีแดง) ต่อตามปกติ
         if (hasValidationErrors) { 
             openConfirmModal('danger', 'ข้อมูลไม่ถูกต้อง!', 'โปรดแก้ไขช่องสีแดงก่อนบันทึก', () => {}); 
             return; 
         }
-        const fingerprint = allI.map(i => i.value.trim()).join('|');
+
+        // สร้าง Fingerprint จาก Input ทั้งหมดหน้า Verify
+        const allInputs = Array.from(document.querySelectorAll('#page-verify .num-input'));
+        const fingerprint = allInputs.map(i => i.value.trim()).join('|');
+
         if (savedHistory.indexOf(fingerprint) !== -1) { 
             openConfirmModal('warning', 'ชุดข้อมูลซ้ำ!', 'ข้อมูลนี้เหมือนกับรอบที่เคยบันทึกไว้ ยืนยันบันทึกซ้ำหรือไม่?', () => executeSave(fingerprint)); 
             return; 
         }
+        
         openConfirmModal('info', 'ยืนยันบันทึก?', 'คุณต้องการบันทึกข้อมูลและบวกเพิ่มยอดสะสมใช่หรือไม่?', () => executeSave(fingerprint));
-    }
-
-    // --- 5. HELPERS & UTILITIES ---
-    function getSummaryDataArray() {
-        const rows = document.querySelectorAll('.summary-body-verify tr:not(.total-row)');
-        return Array.from(rows).map(row => 
-            Array.from(row.querySelectorAll('.num-input')).map(i => unformatNumber(i.value))
-        );
-    }
-
-    function getTableDataArray(tableId) {
-        const table = document.getElementById(tableId); 
-        if (!table) return [];
-        return Array.from(table.querySelectorAll('tbody tr:not(.total-row) .num-input')).map(i => unformatNumber(i.value));
-    }
+    }    
 
     function formatNumber(n, d = 0) {
         if (n === 0 && d === 0) return "0";
