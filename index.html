@@ -348,64 +348,36 @@
         } catch (error) { showToast("❌ การเชื่อมต่อ Cloud ล้มเหลว"); }
     }
 
+// ค้นหาฟังก์ชันเดิมในไฟล์ แล้ววางก้อนนี้ทับลงไป
 function handleSaveActionWithVerification() {
-        // ดึงข้อมูลแต่ละตารางแยกกันเพื่อตรวจสอบชื่อตาราง
-        const tables = [
-            { id: 'summary-table', name: 'ตารางที่ 1: สรุปภาพรวม' },
-            { id: 'success-table', name: 'ตารางที่ 2: ชำระสำเร็จ' },
-            { id: 'failed-table', name: 'ตารางที่ 3: ชำระไม่สำเร็จ' },
-            { id: 'pending-table', name: 'ตารางที่ 4: รอดำเนินการชำระ' },
-            { id: 'processing-table', name: 'ตารางที่ 5: ระหว่างดำเนินการชำระ' }
-        ];
+    const allInputs = Array.from(document.querySelectorAll('#page-verify .num-input'));
 
-        let missingTables = [];
-        let allEmptyInputs = [];
+    // 1. ตรวจสอบว่า "ว่างทุกช่อง" (ถ้าว่างหมดทุดช่องจะหยุดทำงานและแจ้งเตือน)
+    const isAllEmpty = allInputs.every(input => input.value.trim() === "");
+    if (isAllEmpty) {
+        openConfirmModal('danger', 'ไม่พบข้อมูล!', 
+            'กรุณากรอกข้อมูลอย่างน้อย 1 ช่องก่อนกดบันทึกครับ', 
+            () => {}
+        );
+        return; 
+    }
 
-        // วนลูปเช็คทีละตาราง
-        tables.forEach(table => {
-            const inputs = Array.from(document.querySelectorAll(`#${table.id} .num-input`));
-            const hasEmpty = inputs.some(input => input.value.trim() === "");
-            if (hasEmpty) {
-                missingTables.push(table.name);
-                // เก็บ input ที่ว่างไว้ไฮไลท์สีเหลือง
-                inputs.filter(i => i.value.trim() === "").forEach(i => allEmptyInputs.push(i));
-            }
-        });
+    // 2. เช็คตัวเลขสีแดง (Error จากการคำนวณ)
+    if (hasValidationErrors) { 
+        openConfirmModal('danger', 'ข้อมูลไม่ถูกต้อง!', 'โปรดแก้ไขช่องสีแดงก่อนบันทึก', () => {}); 
+        return; 
+    }
 
-        // --- เงื่อนไขแจ้งเตือนชื่อตาราง ---
-        if (missingTables.length > 0) {
-            openConfirmModal('danger', 'ข้อมูลไม่ครบถ้วน!', 
-                `กรุณากรอกข้อมูลให้ครบใน: \n${missingTables.join('\n')}`, 
-                () => {}
-            );
-
-            // ไฮไลท์ช่องที่ว่างเป็นสีเหลือง (ช่วยให้หาเจอง่ายขึ้น)
-            allEmptyInputs.forEach(input => {
-                input.style.backgroundColor = '#fef3c7';
-                setTimeout(() => { input.style.backgroundColor = ''; }, 3000);
-            });
-            return; 
-        }
-        // -----------------------------
-
-        // เช็ค Error ตัวเลข (ตัวหนังสือสีแดง) ต่อตามปกติ
-        if (hasValidationErrors) { 
-            openConfirmModal('danger', 'ข้อมูลไม่ถูกต้อง!', 'โปรดแก้ไขช่องสีแดงก่อนบันทึก', () => {}); 
-            return; 
-        }
-
-        // สร้าง Fingerprint จาก Input ทั้งหมดหน้า Verify
-        const allInputs = Array.from(document.querySelectorAll('#page-verify .num-input'));
-        const fingerprint = allInputs.map(i => i.value.trim()).join('|');
-
-        if (savedHistory.indexOf(fingerprint) !== -1) { 
-            openConfirmModal('warning', 'ชุดข้อมูลซ้ำ!', 'ข้อมูลนี้เหมือนกับรอบที่เคยบันทึกไว้ ยืนยันบันทึกซ้ำหรือไม่?', () => executeSave(fingerprint)); 
-            return; 
-        }
-        
-        openConfirmModal('info', 'ยืนยันบันทึก?', 'คุณต้องการบันทึกข้อมูลและบวกเพิ่มยอดสะสมใช่หรือไม่?', () => executeSave(fingerprint));
-    }    
-
+    // 3. เช็คประวัติการบันทึกในเครื่อง (ป้องกันการกดซ้ำเร็วๆ)
+    const fingerprint = allInputs.map(i => i.value.trim()).join('|');
+    if (savedHistory.indexOf(fingerprint) !== -1) { 
+        openConfirmModal('warning', 'ชุดข้อมูลซ้ำ!', 'ข้อมูลนี้เหมือนกับรอบที่เคยบันทึกไว้ ยืนยันบันทึกซ้ำหรือไม่?', () => executeSave(fingerprint)); 
+        return; 
+    }
+    
+    // 4. ถามยืนยันเพื่อเรียกใช้ executeSave (ซึ่งจะไปเช็คซ้ำบน Cloud อีกที)
+    openConfirmModal('info', 'ยืนยันบันทึก?', 'คุณต้องการบันทึกข้อมูลและบวกเพิ่มยอดสะสมใช่หรือไม่?', () => executeSave(fingerprint));
+}
     function formatNumber(n, d = 0) {
         if (n === 0 && d === 0) return "0";
         if (!n && n !== 0) return "";
