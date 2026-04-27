@@ -182,11 +182,13 @@
                     <div class="text-[0.65rem] text-gray-400 uppercase font-bold tracking-widest">Cloud Sync</div>
                     <div id="sync-timer-badge" class="bg-white text-blue-600 px-3 py-1 rounded-full font-black text-sm border border-blue-100 shadow-sm">20s</div>
                 </div>
-                <div class="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                </div>
+                <div id="current-user-display" class="mr-3 text-sm font-semibold text-gray-700"></div>
+
+<div class="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+</div>
             </div>
         </div>
 
@@ -256,6 +258,10 @@
         }
         currentUser = select.value;
         loginScreen.style.display = 'none'; 
+        
+        // --- เพิ่มบรรทัดนี้เพื่อให้หน้าจอเปลี่ยนจากหน้า Login ไปหน้าทำงาน ---
+        showPage('verify'); 
+        
         showToast(`ยินดีต้อนรับคุณ ${currentUser}`);
     }
 
@@ -350,34 +356,38 @@
 
 // ค้นหาฟังก์ชันเดิมในไฟล์ แล้ววางก้อนนี้ทับลงไป
 function handleSaveActionWithVerification() {
-    const allInputs = Array.from(document.querySelectorAll('#page-verify .num-input'));
+        const allInputs = Array.from(document.querySelectorAll('#page-verify .num-input'));
+        
+        // 1. ตรวจสอบว่า "ว่างทุกช่อง" หรือไม่ (Check All Empty)
+        // ถ้าทุกช่องเป็นค่าว่าง (isAllEmpty เป็น true) จะแสดงป๊อปอัพสีแดงแจ้งเตือน
+        const isAllEmpty = allInputs.every(input => input.value.trim() === "");
+        
+        if (isAllEmpty) {
+            openConfirmModal('danger', 'ไม่พบข้อมูล!', 
+                'กรุณากรอกข้อมูลอย่างน้อย 1 ช่องก่อนกดบันทึกครับ', 
+                () => {}
+            );
+            return; 
+        }
 
-    // 1. ตรวจสอบว่า "ว่างทุกช่อง" (ถ้าว่างหมดทุดช่องจะหยุดทำงานและแจ้งเตือน)
-    const isAllEmpty = allInputs.every(input => input.value.trim() === "");
-    if (isAllEmpty) {
-        openConfirmModal('danger', 'ไม่พบข้อมูล!', 
-            'กรุณากรอกข้อมูลอย่างน้อย 1 ช่องก่อนกดบันทึกครับ', 
-            () => {}
-        );
-        return; 
-    }
+        // 2. เช็ค Error ตัวเลขสีแดง (Validation)
+        // ถ้ากรอกมาบางช่องแล้ว แต่ยอดไม่ตรง ระบบจะยังเตือนให้แก้สีแดงก่อนบันทึก
+        if (hasValidationErrors) { 
+            openConfirmModal('danger', 'ข้อมูลไม่ถูกต้อง!', 'โปรดแก้ไขช่องสีแดงก่อนบันทึก', () => {}); 
+            return; 
+        }
 
-    // 2. เช็คตัวเลขสีแดง (Error จากการคำนวณ)
-    if (hasValidationErrors) { 
-        openConfirmModal('danger', 'ข้อมูลไม่ถูกต้อง!', 'โปรดแก้ไขช่องสีแดงก่อนบันทึก', () => {}); 
-        return; 
-    }
-
-    // 3. เช็คประวัติการบันทึกในเครื่อง (ป้องกันการกดซ้ำเร็วๆ)
-    const fingerprint = allInputs.map(i => i.value.trim()).join('|');
-    if (savedHistory.indexOf(fingerprint) !== -1) { 
-        openConfirmModal('warning', 'ชุดข้อมูลซ้ำ!', 'ข้อมูลนี้เหมือนกับรอบที่เคยบันทึกไว้ ยืนยันบันทึกซ้ำหรือไม่?', () => executeSave(fingerprint)); 
-        return; 
-    }
+        // 3. ตรวจสอบข้อมูลซ้ำ (Fingerprint) ทั้งในเครื่องและ Cloud
+        const fingerprint = allInputs.map(i => i.value.trim()).join('|');
+        if (savedHistory.indexOf(fingerprint) !== -1) { 
+            openConfirmModal('warning', 'ชุดข้อมูลซ้ำ!', 'ข้อมูลนี้เหมือนกับรอบที่เคยบันทึกไว้ ยืนยันบันทึกซ้ำหรือไม่?', () => executeSave(fingerprint)); 
+            return; 
+        }
+        
+        // 4. ยืนยันการบันทึก
+        openConfirmModal('info', 'ยืนยันบันทึก?', 'คุณต้องการบันทึกข้อมูลและบวกเพิ่มยอดสะสมใช่หรือไม่?', () => executeSave(fingerprint));
+    }    
     
-    // 4. ถามยืนยันเพื่อเรียกใช้ executeSave (ซึ่งจะไปเช็คซ้ำบน Cloud อีกที)
-    openConfirmModal('info', 'ยืนยันบันทึก?', 'คุณต้องการบันทึกข้อมูลและบวกเพิ่มยอดสะสมใช่หรือไม่?', () => executeSave(fingerprint));
-}
     function formatNumber(n, d = 0) {
         if (n === 0 && d === 0) return "0";
         if (!n && n !== 0) return "";
@@ -606,7 +616,61 @@ function handleSaveActionWithVerification() {
         else { td.classList.add('status-incorrect'); return true; }
     }
 
-    function showToast(m) { const t = document.getElementById("toast"); t.innerText = m; t.className = "show"; setTimeout(() => t.className = "", 3000); }
+// --- ฟังก์ชันควบคุมหน้าจอ (showPage) ที่หายไป ---
+    function showPage(pageId) {
+        currentTab = pageId;
+        // ซ่อนทุกหน้าที่มี class 'tab-content'
+        document.querySelectorAll('.tab-content').forEach(p => p.classList.add('hidden'));
+        // แสดงหน้าที่เลือก
+        const targetPage = document.getElementById('page-' + pageId);
+        if (targetPage) targetPage.classList.remove('hidden');
+        
+        // อัปเดตสถานะปุ่ม Tab
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            if (btn.id === 'tab-' + pageId) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+
+        if(pageId === 'verify') validateAll();
+        else fetchCloudData();
+    }
+
+    // --- ฟังก์ชันเลือกชื่อ (selectUser) เพื่อเข้าโปรแกรม ---
+    function selectUser(name) {
+        currentUser = name;
+        // อัปเดตการแสดงผลชื่อ
+        const display = document.getElementById('current-user-display');
+        if (display) display.innerText = `ผู้บันทึก: ${name}`;
+        
+        // สั่งเปลี่ยนหน้าไปหน้าทำงานทันที
+        showPage('verify');
+        showToast(`ยินดีต้อนรับคุณ ${name}`);
+    }
+
+    // --- ฟังก์ชันเสริมที่ Error แจ้งว่าหายไป (getSummaryDataArray) ---
+    function getSummaryDataArray() {
+        const rows = document.querySelectorAll('.summary-body-verify tr');
+        let data = [];
+        rows.forEach(row => {
+            const inputs = Array.from(row.querySelectorAll('.num-input'));
+            if (inputs.length > 0) {
+                data.push(inputs.map(i => unformatNumber(i.value)));
+            }
+        });
+        return data;
+    }
+
+    function getTableDataArray(tableId) {
+        const table = document.getElementById(tableId);
+        if (!table) return [];
+        const inputs = Array.from(table.querySelectorAll('tbody tr:not(.total-row) .num-input'));
+        return inputs.map(i => unformatNumber(i.value));
+    }   
+
+ function showToast(m) { const t = document.getElementById("toast"); t.innerText = m; t.className = "show"; setTimeout(() => t.className = "", 3000); }
 
     // --- 8. EVENTS & INITIALIZATION ---
     document.body.addEventListener('input', e => { if(e.target.classList.contains('num-input')) validateAll(); });
