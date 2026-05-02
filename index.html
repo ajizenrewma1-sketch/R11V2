@@ -17,21 +17,23 @@
         
         /* สไตล์พิเศษสำหรับหน้าสรุปรายงานสะสม (Cumulative) */
         .cum-table-style { 
-            table-layout: auto !important; 
-            width: max-content !important; 
-            min-width: 100%; 
+            table-layout: fixed !important; /* บังคับความกว้างคงที่เหมือนตารางปกติ */
+            width: 100% !important; 
+            min-width: unset !important; 
         }
         
         .cum-table-style td, .cum-table-style th {
-            white-space: nowrap;
-            padding: 4px 3px;
+            white-space: normal; /* ยอมให้ข้อความตัดบรรทัดได้เพื่อประหยัดพื้นที่ */
+            padding: 4px 2px;
+            font-size: 0.75rem; /* ขนาดตัวอักษรเท่าหน้าตรวจสอบประจำวัน */
         }
 
         .num-input-cum { 
             background-color: #f0f9ff; 
             cursor: default; 
-            min-width: 58px !important; 
-            font-size: 0.8rem;
+            min-width: unset !important; /* ยกเลิกการบังคับความกว้างขั้นต่ำ */
+            font-size: 0.85rem; /* ขนาดตัวเลขเท่าหน้าแรก */
+            font-weight: 600;
         }
 
         .table-main-title {
@@ -356,37 +358,29 @@
 
 // ค้นหาฟังก์ชันเดิมในไฟล์ แล้ววางก้อนนี้ทับลงไป
 function handleSaveActionWithVerification() {
-        const allInputs = Array.from(document.querySelectorAll('#page-verify .num-input'));
-        
-        // 1. ตรวจสอบว่า "ว่างทุกช่อง" หรือไม่ (Check All Empty)
-        // ถ้าทุกช่องเป็นค่าว่าง (isAllEmpty เป็น true) จะแสดงป๊อปอัพสีแดงแจ้งเตือน
-        const isAllEmpty = allInputs.every(input => input.value.trim() === "");
-        
-        if (isAllEmpty) {
-            openConfirmModal('danger', 'ไม่พบข้อมูล!', 
-                'กรุณากรอกข้อมูลอย่างน้อย 1 ช่องก่อนกดบันทึกครับ', 
-                () => {}
-            );
-            return; 
-        }
+    const allInputs = Array.from(document.querySelectorAll('#page-verify .num-input'));
+    
+    // 1. ตรวจสอบว่ามีการกรอกข้อมูลหรือไม่
+    const isAllEmpty = allInputs.every(input => input.value.trim() === "" || unformatNumber(input.value) === 0);
+    if (isAllEmpty) {
+        openConfirmModal('danger', 'ไม่พบข้อมูล!', 'กรุณากรอกตัวเลขอย่างน้อย 1 ช่องก่อนบันทึกครับ', () => {});
+        return; 
+    }
 
-        // 2. เช็ค Error ตัวเลขสีแดง (Validation)
-        // ถ้ากรอกมาบางช่องแล้ว แต่ยอดไม่ตรง ระบบจะยังเตือนให้แก้สีแดงก่อนบันทึก
-        if (hasValidationErrors) { 
-            openConfirmModal('danger', 'ข้อมูลไม่ถูกต้อง!', 'โปรดแก้ไขช่องสีแดงก่อนบันทึก', () => {}); 
-            return; 
-        }
+    // 2. เช็ค Error ตัวเลขสีแดง
+    if (hasValidationErrors) { 
+        openConfirmModal('danger', 'ข้อมูลไม่ถูกต้อง!', 'โปรดแก้ไขช่องสีแดงให้ยอดรวมตรงกันก่อนบันทึก', () => {}); 
+        return; 
+    }
 
-        // 3. ตรวจสอบข้อมูลซ้ำ (Fingerprint) ทั้งในเครื่องและ Cloud
-        const fingerprint = allInputs.map(i => i.value.trim()).join('|');
-        if (savedHistory.indexOf(fingerprint) !== -1) { 
-            openConfirmModal('warning', 'ชุดข้อมูลซ้ำ!', 'ข้อมูลนี้เหมือนกับรอบที่เคยบันทึกไว้ ยืนยันบันทึกซ้ำหรือไม่?', () => executeSave(fingerprint)); 
-            return; 
-        }
-        
-        // 4. ยืนยันการบันทึก
-        openConfirmModal('info', 'ยืนยันบันทึก?', 'คุณต้องการบันทึกข้อมูลและบวกเพิ่มยอดสะสมใช่หรือไม่?', () => executeSave(fingerprint));
-    }    
+    // 3. สร้าง Fingerprint โดยเพิ่ม "เวลา" หรือ "ชื่อผู้บันทึก" เข้าไปด้วยเพื่อให้ ID ไม่ซ้ำกันทางเทคนิค
+    // หรือถ้าต้องการเช็คซ้ำแค่ตัวเนื้อหาจริงๆ ให้ใช้ค่าที่ทำ unformatNumber แล้ว
+    const dataContent = allInputs.map(i => unformatNumber(i.value)).join('|');
+    const uniqueFingerprint = `${currentUser}_${Date.now()}_${dataContent}`; 
+
+    // 4. ยืนยันการบันทึก (เอาการเช็ค savedHistory ออก หรือเปลี่ยนไปเช็คเฉพาะ dataContent)
+    openConfirmModal('info', 'ยืนยันบันทึก?', `คุณ ${currentUser} ต้องการบันทึกข้อมูลชุดนี้ใช่หรือไม่?`, () => executeSave(uniqueFingerprint));
+}    
     
     function formatNumber(n, d = 0) {
         if (n === 0 && d === 0) return "0";
