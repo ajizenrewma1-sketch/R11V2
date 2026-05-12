@@ -245,10 +245,22 @@
     let syncTimeLeft = 20;
 
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyF4gpfPD7-Ket7HPKNLjtX6TxPQewKmFwMkd9GZe0xPuM4aKjLqDmu4afawB2Lz4IK/exec"; 
-    const CHANNELS_GENERAL = ["Counter Service", "Mobile Banking", "บัญชีบัตร Easy Pass", "บัญชีบัตร M-PASS", "บัญชีออมทรัพย์", "บัตรเครดิต/เดบิต"];
-    const CHANNELS_TABLE3 = ["บัญชีบัตร Easy Pass", "บัญชีบัตร M-PASS", "บัญชีออมทรัพย์", "บัตรเครดิต/เดบิต"];
-    const CHANNELS_TABLE4 = ["บัญชีบัตร Easy Pass", "บัญชีออมทรัพย์", "บัตรเครดิต/เดบิต", "ยังไม่ระบุช่องทาง", "รายการโต้แย้งที่ไม่ได้ระบุช่องทาง"];
-    const CHANNELS_TABLE5 = ["บัญชีบัตร Easy Pass", "บัญชีบัตร M-PASS", "บัญชีออมทรัพย์", "บัตรเครดิต/เดบิต"];
+    // 🌟 แก้ไข: กำหนดชุดแถวมาตรฐานสำหรับตารางที่ 2-5 ให้เหมือนกันทุกตาราง
+    const REQUIRED_ROWS = [
+        "Counter Service", 
+        "EXCEPTION", 
+        "Mobile Banking", 
+        "POINTPRO", 
+        "บัญชีบัตร Easy Pass", 
+        "บัญชีบัตร M-PASS", 
+        "บัญชีออมทรัพย์", 
+        "บัตรเครดิต/เดบิต"
+    ];
+
+    const CHANNELS_GENERAL = REQUIRED_ROWS;
+    const CHANNELS_TABLE3 = REQUIRED_ROWS;
+    const CHANNELS_TABLE4 = REQUIRED_ROWS;
+    const CHANNELS_TABLE5 = REQUIRED_ROWS;
 
     // --- 2. SESSION & LOGIN ---
     function startSession() {
